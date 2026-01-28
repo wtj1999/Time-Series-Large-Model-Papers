@@ -5,12 +5,17 @@ A list of up-to-date time-series large model papers, reorganized to emphasize ti
 - 2025
     - LLM-based Model
         - [TableTime: Reformulating Time Series Classification as Training-Free Table Understanding with Large Language Models](https://arxiv.org/abs/2411.15737)
+        - [Unleashing The Power of Pre-Trained Language Models for Irregularly Sampled Time Series](https://arxiv.org/abs/2408.08328)
     - Foundation Model
         - [Sundial: A Family of Highly Capable Time Series Foundation Models](https://arxiv.org/abs/2502.00816)
         - [TimeFound: A Foundation Model for Time Series Forecasting](https://arxiv.org/abs/2503.04118)
         - [TimeHF: Billion-Scale Time Series Models Guided by Human Feedback](https://arxiv.org/abs/2501.15942)
         - [Time-MoE: Billion-Scale Time Series Foundation Models with Mixture of Experts](https://arxiv.org/abs/2409.16040)
+        
+    - Tricks for TSLM
         - [Multi-Scale Finetuning for Encoder-based Time Series Foundation Models](https://arxiv.org/abs/2506.14087)
+        - [Improving Time Series Forecasting via Instance-aware Post-hoc Revision](https://arxiv.org/abs/2505.23583)
+  
       
 - 2024
     - LLM-based Model
@@ -21,7 +26,7 @@ A list of up-to-date time-series large model papers, reorganized to emphasize ti
         - [Timer: Generative Pre-trained Transformers Are Large Time Series Models](https://arxiv.org/abs/2402.02368)
         - [Timer-XL: Long-Context Transformers for Unified Time Series Forecasting](https://arxiv.org/abs/2410.04803)
         - [Tiny Time Mixers (TTMs): Fast Pre-trained Models for Enhanced Zero/Few-Shot Forecasting of Multivariate Time Series](https://arxiv.org/abs/2401.03955)
-        - [Unified Training of Universal Time Series Forecasting Transformers](https://arxiv.org/abs/2402.02592)
+        - [MOIRAI: Unified Training of Universal Time Series Forecasting Transformers](https://arxiv.org/abs/2402.02592)
         - [MOMENT: A Family of Open Time-series Foundation Models](https://arxiv.org/abs/2402.03885)
         - [Chronos: Learning the Language of Time Series](https://arxiv.org/abs/2403.07815)
 
