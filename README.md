@@ -3,11 +3,14 @@
 A list of up-to-date time-series large model papers, reorganized to emphasize time-series foundation models, divided into two categories: LLM-based and Foundation Models.
 
 - 2025
+    - LLM-based Model
+        - [TableTime: Reformulating Time Series Classification as Training-Free Table Understanding with Large Language Models](https://arxiv.org/abs/2411.15737)
     - Foundation Model
         - [Sundial: A Family of Highly Capable Time Series Foundation Models](https://arxiv.org/abs/2502.00816)
         - [TimeFound: A Foundation Model for Time Series Forecasting](https://arxiv.org/abs/2503.04118)
         - [TimeHF: Billion-Scale Time Series Models Guided by Human Feedback](https://arxiv.org/abs/2501.15942)
         - [Time-MoE: Billion-Scale Time Series Foundation Models with Mixture of Experts](https://arxiv.org/abs/2409.16040)
+        - [Multi-Scale Finetuning for Encoder-based Time Series Foundation Models](https://arxiv.org/abs/2506.14087)
       
 - 2024
     - LLM-based Model
