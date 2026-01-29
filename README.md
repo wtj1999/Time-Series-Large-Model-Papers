@@ -14,6 +14,7 @@ A list of up-to-date time-series large model papers, reorganized to emphasize ti
         - [TimeHF: Billion-Scale Time Series Models Guided by Human Feedback](https://arxiv.org/abs/2501.15942)
         - [Time-MoE: Billion-Scale Time Series Foundation Models with Mixture of Experts](https://arxiv.org/abs/2409.16040)
         - [ChatTime: A Unified Multimodal Time Series Foundation Model Bridging Numerical and Textual Data](https://arxiv.org/abs/2412.11376)
+        - [Chronos-2: From Univariate to Universal Forecasting](https://arxiv.org/abs/2510.15821)
         
     - Tricks for TSLM
         - [Multi-Scale Finetuning for Encoder-based Time Series Foundation Models](https://arxiv.org/abs/2506.14087)
