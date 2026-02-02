@@ -21,6 +21,7 @@ A list of up-to-date time-series large model papers, reorganized to emphasize ti
         - [Improving Time Series Forecasting via Instance-aware Post-hoc Revision](https://arxiv.org/abs/2505.23583)
         - [TimeSeriesScientist：A General-Purpose AI Agent for Time Series Analysis](https://arxiv.org/abs/2510.01538)
         - [DeepAnalyze: Agentic Large Language Models for Autonomous Data Science](https://arxiv.org/abs/2510.16872)
+        - [MoiraiAgent: An Agentic Framework for Context-Aware Time-Series Forecasting](https://www.salesforce.com/blog/moiraiagent/)
   
       
 - 2024
