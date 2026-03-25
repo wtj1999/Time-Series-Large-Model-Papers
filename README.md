@@ -15,6 +15,7 @@ A list of up-to-date time-series large model papers, reorganized to emphasize ti
         - [Time-MoE: Billion-Scale Time Series Foundation Models with Mixture of Experts](https://arxiv.org/abs/2409.16040)
         - [ChatTime: A Unified Multimodal Time Series Foundation Model Bridging Numerical and Textual Data](https://arxiv.org/abs/2412.11376)
         - [Chronos-2: From Univariate to Universal Forecasting](https://arxiv.org/abs/2510.15821)
+        - [TimeDiT: General-purpose Diffusion Transformers for Time Series Foundation Model](https://arxiv.org/abs/2409.02322)
         
     - Tricks for TSLM
         - [Multi-Scale Finetuning for Encoder-based Time Series Foundation Models](https://arxiv.org/abs/2506.14087)
@@ -22,6 +23,7 @@ A list of up-to-date time-series large model papers, reorganized to emphasize ti
         - [TimeSeriesScientist：A General-Purpose AI Agent for Time Series Analysis](https://arxiv.org/abs/2510.01538)
         - [DeepAnalyze: Agentic Large Language Models for Autonomous Data Science](https://arxiv.org/abs/2510.16872)
         - [MoiraiAgent: An Agentic Framework for Context-Aware Time-Series Forecasting](https://www.salesforce.com/blog/moiraiagent/)
+        - [Domain-Oriented Time Series Inference Agents for Reasoning and Automated Analysis](https://arxiv.org/abs/2410.04047)
   
       
 - 2024
