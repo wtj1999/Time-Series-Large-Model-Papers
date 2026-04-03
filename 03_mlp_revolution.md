@@ -24,7 +24,7 @@ $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\rig
 
 ---
 
-## 2. DLinear / NLinear: 猒一就抓闪电 (2022)
+## 2. DLinear / NLinear (2022)
 
 **论文**: *Are Transformers Effective for Time Series Forecasting?*
 **会议**: AAAI 2023 | **引用数**: 2314
