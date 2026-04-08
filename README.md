@@ -2,6 +2,11 @@
 
 A list of up-to-date time-series large model papers, reorganized to emphasize time-series foundation models, divided into two categories: LLM-based and Foundation Models.
 
+- 2026
+    - Foundation Model
+        - [Timer-S1: A Billion-Scale Time Series Foundation Model with Serial Scaling](https://arxiv.org/abs/2603.04791)
+
+
 - 2025
     - LLM-based Model
         - [TableTime: Reformulating Time Series Classification as Training-Free Table Understanding with Large Language Models](https://arxiv.org/abs/2411.15737)
@@ -16,6 +21,7 @@ A list of up-to-date time-series large model papers, reorganized to emphasize ti
         - [ChatTime: A Unified Multimodal Time Series Foundation Model Bridging Numerical and Textual Data](https://arxiv.org/abs/2412.11376)
         - [Chronos-2: From Univariate to Universal Forecasting](https://arxiv.org/abs/2510.15821)
         - [TimeDiT: General-purpose Diffusion Transformers for Time Series Foundation Model](https://arxiv.org/abs/2409.02322)
+        - [Aurora: Towards Universal Generative Multimodal Time Series Forecasting](https://arxiv.org/abs/2509.22295)
         
     - Tricks for TSLM
         - [Multi-Scale Finetuning for Encoder-based Time Series Foundation Models](https://arxiv.org/abs/2506.14087)
