@@ -149,14 +149,14 @@ $\bullet$ \textbf{w/o LoRA}: The LoRA matrices are removed while the remaining t
 \textbf{Dataset} & \textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\
 \hline
 \multirow{8}{*}{NASA}
-& w/o Decomposition      & 0.0272 & 0.0317 & 0.0366 \\
-& Trend Only             & 0.0272 & 0.0319 & 0.0366 \\
-& Fluctuation Only       & \textbf{0.0221} & \textbf{0.0271} & \textbf{0.0301} \\
-& w/o Cross-HI Attention & 0.0299 & 0.0358 & 0.0408 \\
-& w/o Context Token      & 0.0692 & 0.0882 & 0.0899 \\
-& w/o AR Alignment       & 0.0283 & 0.0336 & 0.0377 \\
-& w/o LoRA               & 0.0281 & 0.0333 & 0.0374 \\
-& MHILLM                  & 0.0249 & 0.0309 & 0.0337 \\
+& w/o Decomposition      & 0.0251 & 0.0283 & 0.0325 \\
+& Trend Only             & 0.0251 & 0.0285 & 0.0325 \\
+& Fluctuation Only       & \textbf{0.0200} & \textbf{0.0237} & \textbf{0.0260} \\
+& w/o Cross-HI Attention & 0.0278 & 0.0324 & 0.0367 \\
+& w/o Context Token      & 0.0671 & 0.0848 & 0.0858 \\
+& w/o AR Alignment       & 0.0262 & 0.0302 & 0.0336 \\
+& w/o LoRA               & 0.0260 & 0.0299 & 0.0333 \\
+& MHILLM                  & 0.0228 & 0.0275 & 0.0296 \\
 \hline
 \multirow{8}{*}{CALCE}
 & w/o Decomposition      & 0.0139 & 0.0252 & 0.0275 \\
