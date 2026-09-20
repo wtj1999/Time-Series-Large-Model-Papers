@@ -140,7 +140,7 @@ $\bullet$ \textbf{w/o LoRA}: The LoRA matrices are removed while the remaining t
 
 \begin{table*}[t]
 \centering
-\caption{Component ablation of MHILLM. All metrics use the normalized scale.}
+\caption{Component ablation of MHILLM under cell-disjoint evaluation. Results are fold averages for seed 2021, and all metrics use the normalized scale.}
 \label{tab:component_ablation}
 \setlength{\tabcolsep}{8pt}
 \renewcommand{\arraystretch}{1.15}
@@ -149,39 +149,41 @@ $\bullet$ \textbf{w/o LoRA}: The LoRA matrices are removed while the remaining t
 \textbf{Dataset} & \textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\
 \hline
 \multirow{8}{*}{NASA}
-& w/o Decomposition      & & & \\
-& Trend Only             & & & \\
-& Fluctuation Only       & & & \\
-& w/o Cross-HI Attention & & & \\
-& w/o Context Token      & & & \\
-& w/o AR Alignment       & & & \\
-& w/o LoRA               & & & \\
-& \textbf{MHILLM} & \textbf{0.0228} & \textbf{0.0275} & \textbf{0.0296} \\
+& w/o Decomposition      & 0.0272 & 0.0317 & 0.0366 \\
+& Trend Only             & 0.0272 & 0.0319 & 0.0366 \\
+& Fluctuation Only       & \textbf{0.0221} & \textbf{0.0271} & \textbf{0.0301} \\
+& w/o Cross-HI Attention & 0.0299 & 0.0358 & 0.0408 \\
+& w/o Context Token      & 0.0692 & 0.0882 & 0.0899 \\
+& w/o AR Alignment       & 0.0283 & 0.0336 & 0.0377 \\
+& w/o LoRA               & 0.0281 & 0.0333 & 0.0374 \\
+& MHILLM                  & 0.0249 & 0.0309 & 0.0337 \\
 \hline
 \multirow{8}{*}{CALCE}
-& w/o Decomposition      & & & \\
-& Trend Only             & & & \\
-& Fluctuation Only       & & & \\
-& w/o Cross-HI Attention & & & \\
-& w/o Context Token      & & & \\
-& w/o AR Alignment       & & & \\
-& w/o LoRA               & & & \\
-& \textbf{MHILLM} & \textbf{0.0119} & \textbf{0.0231} & \textbf{0.0223} \\
+& w/o Decomposition      & 0.0139 & 0.0252 & 0.0275 \\
+& Trend Only             & \textbf{0.0136} & 0.0254 & 0.0277 \\
+& Fluctuation Only       & 0.0138 & 0.0257 & 0.0282 \\
+& w/o Cross-HI Attention & 0.0142 & 0.0258 & 0.0296 \\
+& w/o Context Token      & 0.0670 & 0.0916 & 0.1024 \\
+& w/o AR Alignment       & 0.0142 & \textbf{0.0248} & 0.0276 \\
+& w/o LoRA               & 0.0138 & 0.0254 & \textbf{0.0263} \\
+& MHILLM                  & 0.0139 & \textbf{0.0248} & 0.0265 \\
 \hline
 \multirow{8}{*}{Oxford}
-& w/o Decomposition      & & & \\
-& Trend Only             & & & \\
-& Fluctuation Only       & & & \\
-& w/o Cross-HI Attention & & & \\
-& w/o Context Token      & & & \\
-& w/o AR Alignment       & & & \\
-& w/o LoRA               & & & \\
-& \textbf{MHILLM} & \textbf{0.0037} & \textbf{0.0081} & \textbf{0.0041} \\
+& w/o Decomposition      & 0.0076 & 0.0127 & 0.0096 \\
+& Trend Only             & 0.0089 & 0.0138 & 0.0112 \\
+& Fluctuation Only       & \textbf{0.0072} & \textbf{0.0120} & \textbf{0.0091} \\
+& w/o Cross-HI Attention & 0.0101 & 0.0147 & 0.0127 \\
+& w/o Context Token      & 0.0224 & 0.0306 & 0.0277 \\
+& w/o AR Alignment       & 0.0093 & 0.0146 & 0.0116 \\
+& w/o LoRA               & 0.0077 & 0.0128 & 0.0097 \\
+& MHILLM                  & 0.0092 & 0.0142 & 0.0115 \\
 \hline
 \end{tabular}
 \end{table*}
 
-Table \ref{tab:component_ablation} provides a controlled assessment of MHILLM from three complementary perspectives: degradation representation, multi-HI interaction, and pretrained-model adaptation. For degradation representation, w/o Decomposition feeds the original HI sequence directly into a single branch, and therefore tests whether explicitly separating slow capacity fading from short-lived recovery and measurement fluctuations is necessary. Trend Only retains the smoothed component and removes the fluctuation branch, whereas Fluctuation Only preserves only the residual component. Comparing these two single-branch variants with the complete model reveals whether the two components carry complementary information: the trend branch describes the persistent degradation direction, while the fluctuation branch retains local regeneration and irregular aging behavior that may be suppressed by smoothing. For multi-HI interaction, w/o Cross-HI Attention replaces adaptive indicator interaction with direct aggregation, thereby measuring whether pairwise dependencies among heterogeneous HIs provide information beyond their individual values. The w/o Context Token variant further removes the window-level mean, standard deviation, and observation statistics. Its comparison with the full model isolates the role of absolute health-level context, which may otherwise be weakened by instance normalization. For pretrained-model adaptation, w/o AR Alignment bypasses next-record HI prediction and trains the network directly using SOH labels, allowing us to determine whether self-supervised degradation alignment supplies a useful initialization when labeled cell data are limited. The w/o LoRA variant retains the frozen GPT-2 attention and feed-forward projections while optimizing the remaining trainable modules, and thus quantifies the benefit of low-rank updates to the attention directions. All variants use identical cell-disjoint folds, historical windows, optimization budgets, and validation-based checkpoint selection, so changes in MAE, RMSE, and MAPE can be attributed to the removed component rather than to differences in data exposure or model selection.
+Table \ref{tab:component_ablation} provides a controlled assessment of MHILLM from three complementary perspectives: degradation representation, multi-HI interaction, and pretrained-model adaptation. For degradation representation, w/o Decomposition feeds the original HI sequence directly into a single branch, and therefore tests whether explicitly separating slow capacity fading from short-lived recovery and measurement fluctuations is necessary. Trend Only retains the smoothed component and removes the fluctuation branch, whereas Fluctuation Only preserves only the residual component. For multi-HI interaction, w/o Cross-HI Attention replaces adaptive indicator interaction with direct aggregation. The w/o Context Token variant further removes the window-level mean, standard deviation, and observation statistics, thereby isolating the absolute health-level information that may be weakened by instance normalization. For pretrained-model adaptation, w/o AR Alignment bypasses next-record HI prediction and trains the network directly using SOH labels. The w/o LoRA variant freezes the original GPT-2 projections while retaining the remaining trainable modules. All variants use the same cell-disjoint folds, historical windows, optimization budget, validation rule, and random seed.
+
+The results identify the context token as the most consistently useful component. Removing it raises MAE from 0.0249 to 0.0692 on NASA, from 0.0139 to 0.0670 on CALCE, and from 0.0092 to 0.0224 on Oxford; RMSE and MAPE deteriorate in the same manner. Cross-HI attention is also beneficial relative to the complete model, particularly on NASA, where its removal increases MAE and RMSE to 0.0299 and 0.0358, respectively. AR alignment reduces all three errors on NASA, although its effect is smaller on CALCE and Oxford. The representation variants reveal a less uniform pattern. Fluctuation Only achieves the lowest errors on NASA and Oxford, while Trend Only obtains the lowest CALCE MAE. Likewise, removing LoRA slightly improves CALCE MAPE and all three Oxford metrics, even though it degrades NASA. Thus, this single-seed study strongly supports the context token and provides partial evidence for cross-HI interaction and AR alignment, but it does not establish that dual-branch decomposition or LoRA is uniformly beneficial across datasets. Repeated-seed evaluation is required before making a broader claim about those two components.
 
 \textbf{Backbone ablation.} We further investigate whether the performance of MHILLM arises from its battery-specific modules or depends strongly on the selected language-model backbone. To this end, GPT-2 is replaced with three representative pretrained architectures, namely GPT, BERT, and T5. The HI construction, cycle-wise decomposition, instance normalization, cross-HI attention, context-token generation, historical input length, and SOH regression objective are kept unchanged. When the hidden dimensions of different backbones are inconsistent, a trainable linear projection is used only to match the backbone input and output dimensions. Model selection continues to rely exclusively on the validation cell. This controlled replacement allows the comparison to focus on the sequential prior supplied by each pretrained architecture rather than on changes in battery features or evaluation data. GPT and GPT-2 employ causal decoder-only attention and therefore follow the chronological direction of degradation naturally. BERT uses a bidirectional encoder, allowing every historical token within the observed window to interact with the others, whereas T5 adopts an encoder--decoder formulation and introduces a different denoising pretraining objective. These distinctions may influence how the model represents long-term fading, local capacity recovery, and dependencies among distant cycles. Since the four backbones also differ substantially in parameter count and computational structure, we report trainable and total parameters together with average training time per epoch and prediction errors. Runtime is measured on the same hardware with an identical batch size and excludes one-off data preprocessing and model-loading time.
 
