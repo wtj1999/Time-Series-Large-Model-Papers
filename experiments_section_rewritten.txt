@@ -1,0 +1,250 @@
+\section{Experiments}
+
+This section evaluates MHILLM on three public lithium-ion battery datasets. We first describe the datasets, comparison methods, evaluation protocol, and implementation details. We then examine the overall SOH estimation accuracy, followed by component ablations and parameter-sensitivity analyses. Unless otherwise stated, SOH, MAE, and RMSE are expressed on the normalized scale from 0 to 1, while MAPE is reported as a fraction rather than a percentage.
+
+\subsection{Datasets}
+
+We conduct experiments on the NASA, CALCE, and Oxford battery-aging datasets. These datasets contain different cells, cycling procedures, sampling resolutions, and degradation trajectories, thereby providing complementary test conditions for SOH estimation.
+
+\textbf{NASA.} The NASA battery dataset records repeated charge--discharge experiments under controlled operating conditions. We use the four cells adopted in our benchmark and arrange their measurements in chronological order. The discharge capacity of each cell is divided by its rated capacity to obtain the normalized SOH label.
+
+\textbf{CALCE.} The CALCE dataset contains long-term cycling measurements collected from four lithium-ion cells. Compared with NASA, its capacity trajectories contain different degradation rates and local variations. We construct the same set of health indicators for every available cycle and normalize the measured capacity by the corresponding rated capacity.
+
+\textbf{Oxford.} The Oxford dataset provides aging trajectories for eight pouch cells. Capacity measurements are associated with periodic characterization records rather than every intervening aging cycle. Therefore, one temporal step on Oxford denotes one available characterization record, and the task predicts the SOH associated with the next record.
+
+For all datasets, preprocessing statistics, missing-value handling parameters, health-indicator normalization, and model parameters are fitted using training cells only. Information from validation and test cells is never used to select indicators or estimate normalization statistics.
+
+\subsection{Baselines}
+
+We compare MHILLM with conventional regression methods, neural sequence models, Transformer architectures, and recent pretrained time-series models.
+
+$\bullet$ \textbf{GPR}: Gaussian process regression establishes a nonlinear probabilistic mapping from the input health indicators to SOH.
+
+$\bullet$ \textbf{SVR}: Support vector regression estimates SOH using a kernel-based maximum-margin regressor.
+
+$\bullet$ \textbf{GRU}: The gated recurrent unit processes the historical HI records sequentially and models cycle-to-cycle degradation dependencies.
+
+$\bullet$ \textbf{TCN}: The temporal convolutional network uses causal dilated convolutions to capture local and multi-scale temporal patterns.
+
+$\bullet$ \textbf{CNN--LSTM}: A convolutional front end extracts local degradation features, which are subsequently modeled by an LSTM.
+
+$\bullet$ \textbf{Transformer}: A standard Transformer encoder learns global dependencies among the historical multivariate HI records.
+
+$\bullet$ \textbf{BMSFormer}: BMSFormer combines local and global feature modeling for efficient battery SOH estimation. We adapt its network to the common input and evaluation protocol used in this study.
+
+$\bullet$ \textbf{DLinear}: DLinear decomposes a sequence into slowly varying and residual components and applies linear projections to produce the prediction.
+
+$\bullet$ \textbf{GPT4TS}: GPT4TS adapts a pretrained GPT-2 backbone to numerical time-series modeling through partial parameter fine-tuning.
+
+All baselines receive the same leakage-free historical windows and are evaluated on identical cell-disjoint folds. Hyperparameters are selected using validation cells without referring to test labels.
+
+\subsection{Experiment Settings}
+
+\textbf{Evaluation metrics.} We use mean absolute error (MAE), root mean squared error (RMSE), and mean absolute percentage error (MAPE) to quantify estimation accuracy:
+\begin{gather}
+\operatorname{MAE}=\frac{1}{N}\sum_{n=1}^{N}\left|y_n-\hat{y}_n\right|,\\
+\operatorname{RMSE}=\sqrt{\frac{1}{N}\sum_{n=1}^{N}\left(y_n-\hat{y}_n\right)^2},\\
+\operatorname{MAPE}=\frac{1}{N}\sum_{n=1}^{N}
+\left|\frac{y_n-\hat{y}_n}{y_n}\right|,
+\end{gather}
+where $y_n$ and $\hat{y}_n$ are the reference and estimated normalized SOH values, respectively. Because the factor of 100 is not applied in the last equation, a MAPE value of 0.01 corresponds to an average relative error of 1\%.
+
+\textbf{Cell-disjoint evaluation.} The split is performed by cell identity before historical windows are generated. For NASA and CALCE, each fold uses one cell for testing, one of the remaining cells for validation, and the other two for training. Every cell serves as the test cell once. For Oxford, the same leave-one-cell-out principle is applied to its eight-cell pool, while the validation assignment is fixed for each fold. This protocol evaluates transfer to an unseen cell from the same dataset. It does not, by itself, constitute cross-dataset or cross-chemistry transfer.
+
+For a target at time $t+1$, the input consists of the $L$ available records ending at time $t$. The window advances by one record to construct the next sample and never crosses cell boundaries. NASA and CALCE use the next available aging-cycle record as the target. Oxford uses the next characterization record because measurements for every intervening aging cycle are unavailable. All preprocessing, alignment, and downstream model fitting are repeated independently within each fold.
+
+\textbf{Implementation details.} We adopt GPT-2 with hidden dimension $d=768$ and retain its first six Transformer blocks. The trend and fluctuation sequences share the same backbone parameters. The default model uses $L=16$ historical records, four cross-HI attention heads, multi-scale pooling kernels $\{3,5,9\}$, and LoRA rank $r=8$ with scaling coefficient $\alpha_l=16$. AdamW is used with a batch size of 32, and the learning rate is selected from $\{10^{-4},5\times10^{-4},10^{-3}\}$ using the validation set. Training stops when the validation objective does not improve for ten consecutive epochs. The autoregressive alignment checkpoint is selected by validation HI-prediction loss, whereas the downstream checkpoint is selected by validation MAE. The tokenizer, cross-HI module, regression head, positional embeddings, normalization layers, and LoRA parameters are optimized. The original attention and feed-forward projections of GPT-2 remain frozen.
+
+For neural baselines, the reported values are aggregated over the completed random-seed runs and all test folds. GPR and SVR are treated as deterministic baselines under their fixed training configurations.
+
+\subsection{Main Results}
+
+Table \ref{tab:main_results} summarizes the cell-disjoint SOH estimation results. The best result in each column is marked in bold. MHILLM achieves the lowest error for every metric on all three datasets, showing that its advantage is maintained across distinct cell groups and sampling conventions.
+
+\begin{table*}[t]
+\centering
+\caption{Cell-disjoint SOH estimation results on three datasets. MAE, RMSE, and MAPE are reported on the normalized scale.}
+\label{tab:main_results}
+\setlength{\tabcolsep}{12pt}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabular}{c|c|ccc}
+\hline
+\textbf{Dataset} & \textbf{Method} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\
+\hline
+\multirow{10}{*}{NASA}
+& GPR         & 0.0416 & 0.0478 & 0.0554 \\
+& SVR         & 0.0420 & 0.0509 & 0.0562 \\
+& GRU         & 0.0342 & 0.0407 & 0.0446 \\
+& TCN         & 0.0371 & 0.0468 & 0.0554 \\
+& CNN--LSTM   & 0.0291 & 0.0355 & 0.0398 \\
+& Transformer & 0.0269 & 0.0321 & 0.0356 \\
+& BMSFormer   & 0.0252 & 0.0312 & 0.0338 \\
+& DLinear     & 0.0263 & 0.0319 & 0.0354 \\
+& GPT4TS      & 0.0254 & 0.0292 & 0.0332 \\
+& \textbf{MHILLM} & \textbf{0.0228} & \textbf{0.0275} & \textbf{0.0296} \\
+\hline
+\multirow{10}{*}{CALCE}
+& GPR         & 0.0173 & 0.0314 & 0.0342 \\
+& SVR         & 0.0224 & 0.0421 & 0.0464 \\
+& GRU         & 0.0169 & 0.0284 & 0.0320 \\
+& TCN         & 0.0155 & 0.0268 & 0.0316 \\
+& CNN--LSTM   & 0.0157 & 0.0278 & 0.0314 \\
+& Transformer & 0.0131 & 0.0257 & 0.0302 \\
+& BMSFormer   & 0.0129 & 0.0250 & 0.0279 \\
+& DLinear     & 0.0124 & 0.0240 & 0.0241 \\
+& GPT4TS      & 0.0128 & 0.0253 & 0.0279 \\
+& \textbf{MHILLM} & \textbf{0.0119} & \textbf{0.0231} & \textbf{0.0223} \\
+\hline
+\multirow{10}{*}{Oxford}
+& GPR         & 0.0073 & 0.0128 & 0.0095 \\
+& SVR         & 0.0069 & 0.0123 & 0.0089 \\
+& GRU         & 0.0064 & 0.0115 & 0.0082 \\
+& TCN         & 0.0052 & 0.0106 & 0.0067 \\
+& CNN--LSTM   & 0.0053 & 0.0103 & 0.0069 \\
+& Transformer & 0.0044 & 0.0093 & 0.0056 \\
+& BMSFormer   & 0.0047 & 0.0097 & 0.0061 \\
+& DLinear     & 0.0048 & 0.0100 & 0.0063 \\
+& GPT4TS      & 0.0058 & 0.0112 & 0.0077 \\
+& \textbf{MHILLM} & \textbf{0.0037} & \textbf{0.0081} & \textbf{0.0041} \\
+\hline
+\end{tabular}
+\end{table*}
+
+On NASA, MHILLM reduces MAE, RMSE, and MAPE by 9.52\%, 5.82\%, and 10.84\%, respectively, relative to the strongest competing result for each metric. The improvement is consistent across absolute and relative errors, indicating that the model does not gain accuracy only at a particular SOH range. On CALCE, the corresponding reductions are 4.03\%, 3.75\%, and 7.47\%. Although the margin is smaller on this dataset, MHILLM remains the only method that obtains the best value for all three measures.
+
+The largest gains occur on Oxford. Compared with the best baseline in each column, MHILLM lowers MAE by 15.91\%, RMSE by 12.90\%, and MAPE by 26.79\%. This result is especially relevant because Oxford is evaluated at the characterization-record level and each fold tests a cell excluded from model fitting. The improvement suggests that the learned representation remains effective when the sampling interval and degradation profile differ from those of NASA and CALCE.
+
+The conventional regressors produce comparatively large errors on NASA and CALCE. GPR and SVR map the engineered inputs to SOH but do not explicitly describe how multiple indicators evolve across a historical window. GRU, TCN, and CNN--LSTM exploit temporal structure and generally improve upon these regressors; nevertheless, their representations are learned solely from the available battery-training folds and provide limited mechanisms for separating persistent degradation from short-lived capacity recovery.
+
+Transformer-based and decomposition-based baselines are more competitive. The standard Transformer benefits from global dependency modeling, BMSFormer combines local and global information, and DLinear provides a strong result on CALCE through a simple decomposition prior. GPT4TS attains the strongest baseline RMSE and MAPE on NASA, demonstrating the value of adapting a pretrained sequence model. Its weaker Oxford performance, however, indicates that direct LLM adaptation alone does not guarantee robust multi-indicator modeling under a different record structure.
+
+MHILLM combines three sources of information that are absent as a whole from the baselines. First, cycle-wise decomposition separates gradual capacity fading from transient fluctuations, reducing interference from capacity regeneration. Second, cross-HI attention models the dependence among heterogeneous indicators rather than treating their concatenation as a fixed representation. Third, autoregressive HI alignment and LoRA adaptation orient the pretrained backbone toward degradation dynamics before SOH regression. The consistent reduction of all three errors supports the joint use of these designs for unseen-cell estimation.
+
+\subsection{Ablation Studies}
+
+We design component ablations to isolate the contribution of the main architectural and training choices. Every variant uses the same cell-disjoint folds, preprocessing procedure, training budget, and model-selection rule as the full model.
+
+$\bullet$ \textbf{w/o Decomposition}: The original normalized HI sequence is supplied to a single branch without separating the smooth trend and fluctuation components.
+
+$\bullet$ \textbf{Trend Only}: The fluctuation branch is removed, and SOH is estimated using only the smooth degradation component.
+
+$\bullet$ \textbf{Fluctuation Only}: The trend branch is removed, leaving only the short-term residual component.
+
+$\bullet$ \textbf{w/o Cross-HI Attention}: Cross-HI attention is replaced by a shared linear projection followed by direct HI aggregation.
+
+$\bullet$ \textbf{w/o Context Token}: The degradation-context token constructed from the instance statistics is removed.
+
+$\bullet$ \textbf{w/o AR Alignment}: The autoregressive next-HI alignment stage is skipped, and the SOH estimator is trained directly from the pretrained initialization.
+
+$\bullet$ \textbf{w/o LoRA}: The LoRA matrices are removed while the remaining trainable modules and partial-freezing policy are retained.
+
+\begin{table*}[t]
+\centering
+\caption{Component ablation of MHILLM. All metrics use the normalized scale.}
+\label{tab:component_ablation}
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|ccc}
+\hline
+\textbf{Dataset} & \textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\
+\hline
+\multirow{8}{*}{NASA}
+& w/o Decomposition      & & & \\
+& Trend Only             & & & \\
+& Fluctuation Only       & & & \\
+& w/o Cross-HI Attention & & & \\
+& w/o Context Token      & & & \\
+& w/o AR Alignment       & & & \\
+& w/o LoRA               & & & \\
+& \textbf{MHILLM} & \textbf{0.0228} & \textbf{0.0275} & \textbf{0.0296} \\
+\hline
+\multirow{8}{*}{CALCE}
+& w/o Decomposition      & & & \\
+& Trend Only             & & & \\
+& Fluctuation Only       & & & \\
+& w/o Cross-HI Attention & & & \\
+& w/o Context Token      & & & \\
+& w/o AR Alignment       & & & \\
+& w/o LoRA               & & & \\
+& \textbf{MHILLM} & \textbf{0.0119} & \textbf{0.0231} & \textbf{0.0223} \\
+\hline
+\multirow{8}{*}{Oxford}
+& w/o Decomposition      & & & \\
+& Trend Only             & & & \\
+& Fluctuation Only       & & & \\
+& w/o Cross-HI Attention & & & \\
+& w/o Context Token      & & & \\
+& w/o AR Alignment       & & & \\
+& w/o LoRA               & & & \\
+& \textbf{MHILLM} & \textbf{0.0037} & \textbf{0.0081} & \textbf{0.0041} \\
+\hline
+\end{tabular}
+\end{table*}
+
+Table \ref{tab:component_ablation} provides a controlled assessment of MHILLM from three complementary perspectives: degradation representation, multi-HI interaction, and pretrained-model adaptation. For degradation representation, w/o Decomposition feeds the original HI sequence directly into a single branch, and therefore tests whether explicitly separating slow capacity fading from short-lived recovery and measurement fluctuations is necessary. Trend Only retains the smoothed component and removes the fluctuation branch, whereas Fluctuation Only preserves only the residual component. Comparing these two single-branch variants with the complete model reveals whether the two components carry complementary information: the trend branch describes the persistent degradation direction, while the fluctuation branch retains local regeneration and irregular aging behavior that may be suppressed by smoothing. For multi-HI interaction, w/o Cross-HI Attention replaces adaptive indicator interaction with direct aggregation, thereby measuring whether pairwise dependencies among heterogeneous HIs provide information beyond their individual values. The w/o Context Token variant further removes the window-level mean, standard deviation, and observation statistics. Its comparison with the full model isolates the role of absolute health-level context, which may otherwise be weakened by instance normalization. For pretrained-model adaptation, w/o AR Alignment bypasses next-record HI prediction and trains the network directly using SOH labels, allowing us to determine whether self-supervised degradation alignment supplies a useful initialization when labeled cell data are limited. The w/o LoRA variant retains the frozen GPT-2 attention and feed-forward projections while optimizing the remaining trainable modules, and thus quantifies the benefit of low-rank updates to the attention directions. All variants use identical cell-disjoint folds, historical windows, optimization budgets, and validation-based checkpoint selection, so changes in MAE, RMSE, and MAPE can be attributed to the removed component rather than to differences in data exposure or model selection.
+
+\textbf{Backbone ablation.} We further investigate whether the performance of MHILLM arises from its battery-specific modules or depends strongly on the selected language-model backbone. To this end, GPT-2 is replaced with three representative pretrained architectures, namely GPT, BERT, and T5. The HI construction, cycle-wise decomposition, instance normalization, cross-HI attention, context-token generation, historical input length, and SOH regression objective are kept unchanged. When the hidden dimensions of different backbones are inconsistent, a trainable linear projection is used only to match the backbone input and output dimensions. Model selection continues to rely exclusively on the validation cell. This controlled replacement allows the comparison to focus on the sequential prior supplied by each pretrained architecture rather than on changes in battery features or evaluation data. GPT and GPT-2 employ causal decoder-only attention and therefore follow the chronological direction of degradation naturally. BERT uses a bidirectional encoder, allowing every historical token within the observed window to interact with the others, whereas T5 adopts an encoder--decoder formulation and introduces a different denoising pretraining objective. These distinctions may influence how the model represents long-term fading, local capacity recovery, and dependencies among distant cycles. Since the four backbones also differ substantially in parameter count and computational structure, we report trainable and total parameters together with average training time per epoch and prediction errors. Runtime is measured on the same hardware with an identical batch size and excludes one-off data preprocessing and model-loading time.
+
+\begin{table*}[t]
+\centering
+\caption{Ablation study of pretrained backbone models.}
+\label{tab:backbone_ablation}
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|cc}
+\hline
+\textbf{Dataset} & \textbf{Backbone} & \textbf{Params. (M)}
+& \textbf{Time/epoch (s)} & \textbf{MAE} & \textbf{RMSE} \\
+\hline
+\multirow{4}{*}{NASA}
+& GPT          & & & & \\
+& BERT         & & & & \\
+& T5           & & & & \\
+& GPT-2 (ours) & & & & \\
+\hline
+\multirow{4}{*}{CALCE}
+& GPT          & & & & \\
+& BERT         & & & & \\
+& T5           & & & & \\
+& GPT-2 (ours) & & & & \\
+\hline
+\multirow{4}{*}{Oxford}
+& GPT          & & & & \\
+& BERT         & & & & \\
+& T5           & & & & \\
+& GPT-2 (ours) & & & & \\
+\hline
+\end{tabular}
+\end{table*}
+
+Table \ref{tab:backbone_ablation} separates predictive accuracy from computational complexity. The comparison between GPT and GPT-2 examines whether differences in causal pretraining scale and representation quality translate into more accurate degradation modeling. The BERT variant tests whether unrestricted interaction among already observed historical records benefits SOH estimation, while the T5 variant evaluates whether an encoder--decoder prior provides additional modeling capacity for the numerical sequence. MAE and RMSE should be interpreted jointly with the parameter count and time per epoch: a lower error obtained through a substantially larger or slower backbone may be less attractive for repeated training or resource-constrained battery-management applications. Conversely, a compact backbone that approaches the best accuracy may offer a more favorable deployment trade-off. The final interpretation should therefore identify whether accuracy follows architecture type, computational cost, or parameter scale, rather than treating model size alone as the explanation for any observed difference.
+
+\subsection{Parameter Sensitivity}
+
+We further study five hyperparameters closely related to the proposed design: historical input length $L$, retained GPT-2 depth $N_l$, number of cross-HI attention heads $N_a$, LoRA rank $r$, and the multi-scale pooling configuration $\mathcal{K}$. For each study, one factor is varied while the remaining settings are fixed at their default values. Candidate values are listed in Table \ref{tab:parameter_search}.
+
+\begin{table}[t]
+\centering
+\caption{Candidate values used in the parameter-sensitivity study.}
+\label{tab:parameter_search}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c}
+\hline
+\textbf{Parameter} & \textbf{Candidates} & \textbf{Default} \\
+\hline
+Historical length $L$ & $\{4,8,16,24,32\}$ & $16$ \\
+GPT-2 blocks $N_l$ & $\{2,4,6,8,12\}$ & $6$ \\
+Attention heads $N_a$ & $\{1,2,4,8\}$ & $4$ \\
+LoRA rank $r$ & $\{2,4,8,16,32\}$ & $8$ \\
+Pooling scales $\mathcal{K}$
+& $\{3\}$, $\{3,5\}$, $\{3,5,9\}$, $\{3,5,9,13\}$
+& $\{3,5,9\}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+The history-length experiment evaluates the balance between degradation context and the number of valid windows. The depth study measures whether additional pretrained blocks supply useful abstraction or introduce unnecessary capacity for the available battery data. Varying $N_a$ tests the granularity of cross-indicator interaction, whereas the LoRA study measures the adaptation capacity required to bridge language and battery sequences. Finally, the pooling configurations determine whether a single smoothing scale is sufficient or whether multiple temporal resolutions are needed to separate gradual fading from local recovery. Parameter conclusions should be drawn from the validation-consistent trends after the corresponding results are available.
+
+
+
