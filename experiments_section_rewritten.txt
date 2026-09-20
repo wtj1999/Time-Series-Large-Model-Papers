@@ -223,6 +223,8 @@ Table \ref{tab:backbone_ablation} separates predictive accuracy from computation
 
 The comparison between GPT and GPT-2 shows that the stronger causal pretraining and representation capability of GPT-2 lead to more accurate degradation modeling. The BERT variant performs less effectively than GPT-2, indicating that unrestricted interaction among observed historical records does not provide additional benefits for SOH estimation. Similarly, the T5 variant does not surpass GPT-2, demonstrating that the encoder--decoder architecture does not offer a superior modeling capability for the numerical degradation sequence.
 
+The results further show that predictive accuracy is not determined by parameter scale alone. Although computational complexity and parameter count affect training efficiency, GPT-2 achieves the best accuracy without relying solely on increased model size. Its combination of causal sequence modeling, effective representation learning, and computational efficiency makes it the most suitable backbone for the proposed SOH prediction framework. Therefore, GPT-2 is adopted as the backbone in subsequent experiments.
+
 \subsection{Parameter Sensitivity}
 
 We further study five hyperparameters closely related to the proposed design: historical input length $L$, retained GPT-2 depth $N_l$, number of cross-HI attention heads $N_a$, LoRA rank $r$, and the multi-scale pooling configuration $\mathcal{K}$. For each study, one factor is varied while the remaining settings are fixed at their default values. Candidate values are listed in Table \ref{tab:parameter_search}.
