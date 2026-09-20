@@ -169,14 +169,14 @@ $\bullet$ \textbf{w/o LoRA}: The LoRA matrices are removed while the remaining t
 & MHILLM                  & 0.0119 & \textbf{0.0231} & 0.0223 \\
 \hline
 \multirow{8}{*}{Oxford}
-& w/o Decomposition      & 0.0076 & 0.0127 & 0.0096 \\
-& Trend Only             & 0.0089 & 0.0138 & 0.0112 \\
-& Fluctuation Only       & \textbf{0.0072} & \textbf{0.0120} & \textbf{0.0091} \\
-& w/o Cross-HI Attention & 0.0101 & 0.0147 & 0.0127 \\
-& w/o Context Token      & 0.0224 & 0.0306 & 0.0277 \\
-& w/o AR Alignment       & 0.0093 & 0.0146 & 0.0116 \\
-& w/o LoRA               & 0.0077 & 0.0128 & 0.0097 \\
-& MHILLM                  & 0.0092 & 0.0142 & 0.0115 \\
+& w/o Decomposition      & 0.0021 & 0.0066 & 0.0022 \\
+& Trend Only             & 0.0034 & 0.0077 & 0.0038 \\
+& Fluctuation Only       & \textbf{0.0017} & \textbf{0.0059} & \textbf{0.0017} \\
+& w/o Cross-HI Attention & 0.0046 & 0.0086 & 0.0053 \\
+& w/o Context Token      & 0.0169 & 0.0245 & 0.0203 \\
+& w/o AR Alignment       & 0.0038 & 0.0085 & 0.0042 \\
+& w/o LoRA               & 0.0022 & 0.0067 & 0.0023 \\
+& MHILLM                  & 0.0037 & 0.0081 & 0.0041 \\
 \hline
 \end{tabular}
 \end{table*}
