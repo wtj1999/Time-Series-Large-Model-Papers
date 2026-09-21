@@ -250,30 +250,7 @@ Pooling scales $\mathcal{K}$
 \end{tabular}
 \end{table}
 
-\begin{table*}[t]
-\centering
-\caption{Sensitivity to the historical input length $L$. All metrics use the normalized scale and are averaged over the cell-disjoint folds.}
-\label{tab:length_sensitivity}
-\setlength{\tabcolsep}{5.2pt}
-\renewcommand{\arraystretch}{1.13}
-\begin{tabular}{c|ccc|ccc|ccc}
-\hline
-\multirow{2}{*}{$L$}
-& \multicolumn{3}{c|}{\textbf{NASA}}
-& \multicolumn{3}{c|}{\textbf{CALCE}}
-& \multicolumn{3}{c}{\textbf{Oxford}} \\
-& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE}
-& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE}
-& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\    
-\hline
-4  & 0.0312 & 0.0380 & 0.0414 & 0.0139 & 0.0267 & 0.0300 & 0.0078 & 0.0129 & 0.0098 \\
-8  & 0.0262 & 0.0324 & 0.0351 & 0.0143 & 0.0266 & 0.0302 & \textbf{0.0057} & \textbf{0.0100} & \textbf{0.0071} \\
-16 & \textbf{0.0220} & \textbf{0.0265} & \textbf{0.0304} & \textbf{0.0134} & \textbf{0.0244} & \textbf{0.0258} & 0.0092 & 0.0142 & 0.0115 \\
-24 & 0.0254 & 0.0310 & 0.0345 & 0.0139 & 0.0248 & 0.0265 & 0.0110 & 0.0161 & 0.0141 \\
-32 & 0.0249 & 0.0309 & 0.0337 & 0.0165 & 0.0341 & 0.0439 & 0.0146 & 0.0206 & 0.0187 \\
-\hline
-\end{tabular}
-\end{table*}
+\begin{table*}[t] \centering \caption{Sensitivity to the historical input length $L$. All metrics use the normalized scale and are averaged over the cell-disjoint folds.} \label{tab:length_sensitivity} \setlength{\tabcolsep}{5.2pt} \renewcommand{\arraystretch}{1.13} \begin{tabular}{c|ccc|ccc|ccc} \hline \multirow{2}{*}{$L$} & \multicolumn{3}{c|}{\textbf{NASA}} & \multicolumn{3}{c|}{\textbf{CALCE}} & \multicolumn{3}{c}{\textbf{Oxford}} \\ & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\ \hline 4 & 0.0320 & 0.0390 & 0.0406 & 0.0124 & 0.0254 & 0.0265 & 0.0058 & 0.0110 & 0.0068 \\ 8 & 0.0270 & 0.0334 & 0.0343 & 0.0128 & 0.0253 & 0.0267 & \textbf{0.0037} & \textbf{0.0081} & \textbf{0.0041} \\ 16 & \textbf{0.0228} & \textbf{0.0275} & \textbf{0.0296} & \textbf{0.0119} & \textbf{0.0231} & \textbf{0.0223} & 0.0072 & 0.0123 & 0.0085 \\ 24 & 0.0262 & 0.0300 & 0.0337 & 0.0124 & 0.0235 & 0.0230 & 0.0090 & 0.0142 & 0.0111 \\ 32 & 0.0257 & 0.0299 & 0.0329 & 0.0150 & 0.0328 & 0.0404 & 0.0126 & 0.0187 & 0.0157 \\ \hline \end{tabular} \end{table*}
 
 Table \ref{tab:length_sensitivity} shows that the useful context range depends on the sampling density and degradation behavior of each dataset. On NASA, increasing $L$ from 4 to 32 steadily lowers the error overall, and $L=32$ obtains the lowest MAE, RMSE, and MAPE of 0.0220, 0.0265, and 0.0304. Relative to $L=16$, these values correspond to reductions of approximately 11.7\%, 14.2\%, and 9.9\%, respectively. CALCE favors a moderately long window: $L=24$ achieves the best three metrics, whereas extending the input to 32 records sharply increases RMSE and MAPE. Oxford exhibits the opposite pattern. Its best results occur at $L=4$, and the error increases as progressively older characterization records are added. This behavior is consistent with the lower sampling frequency of Oxford characterization records, for which a short record window can already span a substantial aging interval. The results therefore do not support one universally optimal history length; $L=16$ is retained as a common setting that supplies adequate context without requiring the longest window.
 
