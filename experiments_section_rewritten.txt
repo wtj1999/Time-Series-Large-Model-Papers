@@ -250,6 +250,84 @@ Pooling scales $\mathcal{K}$
 \end{tabular}
 \end{table}
 
+\begin{table*}[t]
+\centering
+\caption{Sensitivity to the historical input length $L$. All metrics use the normalized scale and are averaged over the cell-disjoint folds.}
+\label{tab:length_sensitivity}
+\setlength{\tabcolsep}{5.2pt}
+\renewcommand{\arraystretch}{1.13}
+\begin{tabular}{c|ccc|ccc|ccc}
+\hline
+\multirow{2}{*}{$L$}
+& \multicolumn{3}{c|}{\textbf{NASA}}
+& \multicolumn{3}{c|}{\textbf{CALCE}}
+& \multicolumn{3}{c}{\textbf{Oxford}} \\
+& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE}
+& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE}
+& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\
+\hline
+4  & 0.0312 & 0.0380 & 0.0414 & 0.0139 & 0.0267 & 0.0300 & \textbf{0.0057} & \textbf{0.0100} & \textbf{0.0071} \\
+8  & 0.0262 & 0.0324 & 0.0351 & 0.0143 & 0.0266 & 0.0302 & 0.0078 & 0.0129 & 0.0098 \\
+16 & 0.0249 & 0.0309 & 0.0337 & 0.0139 & 0.0248 & 0.0265 & 0.0092 & 0.0142 & 0.0115 \\
+24 & 0.0254 & 0.0310 & 0.0345 & \textbf{0.0134} & \textbf{0.0244} & \textbf{0.0258} & 0.0110 & 0.0161 & 0.0141 \\
+32 & \textbf{0.0220} & \textbf{0.0265} & \textbf{0.0304} & 0.0165 & 0.0341 & 0.0439 & 0.0146 & 0.0206 & 0.0187 \\
+\hline
+\end{tabular}
+\end{table*}
+
+Table \ref{tab:length_sensitivity} shows that the useful context range depends on the sampling density and degradation behavior of each dataset. On NASA, increasing $L$ from 4 to 32 steadily lowers the error overall, and $L=32$ obtains the lowest MAE, RMSE, and MAPE of 0.0220, 0.0265, and 0.0304. Relative to $L=16$, these values correspond to reductions of approximately 11.7\%, 14.2\%, and 9.9\%, respectively. CALCE favors a moderately long window: $L=24$ achieves the best three metrics, whereas extending the input to 32 records sharply increases RMSE and MAPE. Oxford exhibits the opposite pattern. Its best results occur at $L=4$, and the error increases as progressively older characterization records are added. This behavior is consistent with the lower sampling frequency of Oxford characterization records, for which a short record window can already span a substantial aging interval. The results therefore do not support one universally optimal history length; $L=16$ is retained as a common setting that supplies adequate context without requiring the longest window.
+
+\begin{table*}[t]
+\centering
+\caption{Sensitivity to the number of retained GPT-2 blocks $N_l$. All metrics use the normalized scale and are averaged over the cell-disjoint folds.}
+\label{tab:depth_sensitivity}
+\setlength{\tabcolsep}{5.2pt}
+\renewcommand{\arraystretch}{1.13}
+\begin{tabular}{c|ccc|ccc|ccc}
+\hline
+\multirow{2}{*}{$N_l$}
+& \multicolumn{3}{c|}{\textbf{NASA}}
+& \multicolumn{3}{c|}{\textbf{CALCE}}
+& \multicolumn{3}{c}{\textbf{Oxford}} \\
+& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE}
+& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE}
+& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\
+\hline
+2  & 0.0263 & 0.0340 & 0.0354 & 0.0142 & 0.0263 & 0.0296 & \textbf{0.0071} & \textbf{0.0123} & \textbf{0.0090} \\
+4  & 0.0249 & \textbf{0.0301} & \textbf{0.0337} & 0.0145 & 0.0263 & 0.0290 & 0.0073 & 0.0123 & 0.0092 \\
+6  & \textbf{0.0249} & 0.0309 & 0.0337 & 0.0139 & \textbf{0.0248} & \textbf{0.0265} & 0.0092 & 0.0142 & 0.0115 \\
+8  & 0.0284 & 0.0337 & 0.0387 & \textbf{0.0138} & 0.0257 & 0.0274 & 0.0079 & 0.0129 & 0.0100 \\
+12 & 0.0285 & 0.0336 & 0.0378 & 0.0144 & 0.0268 & 0.0299 & 0.0091 & 0.0139 & 0.0114 \\
+\hline
+\end{tabular}
+\end{table*}
+
+The depth comparison in Table \ref{tab:depth_sensitivity} indicates that additional pretrained blocks do not produce monotonic gains. On NASA, six blocks give the lowest MAE, while four blocks achieve the lowest RMSE and MAPE; the numerical gap between the four- and six-block variants is small. On CALCE, eight blocks slightly improve MAE, but the six-block model retains the lowest RMSE and MAPE. Oxford requires substantially less depth, with two blocks producing the best values for all three metrics. Increasing the depth to 12 blocks does not improve any dataset and raises the total model size from 54.12M parameters at two blocks to 125.24M parameters. Six blocks are consequently used as the default because they provide the most balanced NASA and CALCE performance while avoiding the cost of the deepest alternatives. The Oxford result also suggests that deeper semantic transformations can be unnecessary when the input sequence contains relatively sparse characterization records.
+
+\begin{table*}[t]
+\centering
+\caption{Sensitivity to the number of cross-HI attention heads $N_a$. All metrics use the normalized scale and are averaged over the cell-disjoint folds.}
+\label{tab:head_sensitivity}
+\setlength{\tabcolsep}{5.2pt}
+\renewcommand{\arraystretch}{1.13}
+\begin{tabular}{c|ccc|ccc|ccc}
+\hline
+\multirow{2}{*}{$N_a$}
+& \multicolumn{3}{c|}{\textbf{NASA}}
+& \multicolumn{3}{c|}{\textbf{CALCE}}
+& \multicolumn{3}{c}{\textbf{Oxford}} \\
+& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE}
+& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE}
+& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\
+\hline
+1 & 0.0292 & 0.0359 & 0.0383 & \textbf{0.0136} & 0.0249 & 0.0280 & 0.0094 & 0.0144 & 0.0117 \\
+2 & 0.0264 & 0.0314 & 0.0358 & 0.0143 & 0.0254 & 0.0276 & 0.0081 & 0.0129 & 0.0102 \\
+4 & \textbf{0.0249} & \textbf{0.0309} & \textbf{0.0337} & 0.0139 & \textbf{0.0248} & \textbf{0.0265} & 0.0092 & 0.0142 & 0.0115 \\
+8 & 0.0274 & 0.0334 & 0.0373 & 0.0143 & 0.0268 & 0.0308 & \textbf{0.0080} & \textbf{0.0128} & \textbf{0.0101} \\
+\hline
+\end{tabular}
+\end{table*}
+
 The history-length experiment evaluates the balance between degradation context and the number of valid windows. The depth study measures whether additional pretrained blocks supply useful abstraction or introduce unnecessary capacity for the available battery data. Varying $N_a$ tests the granularity of cross-indicator interaction, whereas the LoRA study measures the adaptation capacity required to bridge language and battery sequences. Finally, the pooling configurations determine whether a single smoothing scale is sufficient or whether multiple temporal resolutions are needed to separate gradual fading from local recovery. Parameter conclusions should be drawn from the validation-consistent trends after the corresponding results are available.
 
 \paragraph{Historical Input Length $L$.}
