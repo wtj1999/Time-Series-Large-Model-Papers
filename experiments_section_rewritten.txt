@@ -199,22 +199,22 @@ The results identify the context token as the most consistently useful component
 & \textbf{Time/epoch (s)} & \textbf{MAE} & \textbf{RMSE} \\
 \hline
 \multirow{4}{*}{NASA}
-& GPT          & & & & \\
-& BERT         & & & & \\
-& T5           & & & & \\
-& GPT-2 (ours) & & & & \\
+& GPT          & 74.66 & 0.327 & 0.0294 & 0.0347 \\
+& BERT         & 67.02 & 0.319 & 0.0291 & 0.0350 \\
+& T5           & 67.80 & 0.369 & 0.0308 & 0.0359 \\
+& GPT-2 (ours) & 82.57 & 0.336 & \textbf{0.0283} & \textbf{0.0343} \\
 \hline
 \multirow{4}{*}{CALCE}
-& GPT          & & & & \\
-& BERT         & & & & \\
-& T5           & & & & \\
-& GPT-2 (ours) & & & & \\
+& GPT          & 74.66 & 2.104 & 0.0161 & 0.0280 \\
+& BERT         & 67.02 & 1.888 & 0.0145 & 0.0260 \\
+& T5           & 67.80 & 2.180 & 0.0159 & 0.0282 \\
+& GPT-2 (ours) & 82.57 & 2.049 & \textbf{0.0136} & \textbf{0.0255} \\
 \hline
 \multirow{4}{*}{Oxford}
-& GPT          & & & & \\
-& BERT         & & & & \\
-& T5           & & & & \\
-& GPT-2 (ours) & & & & \\
+& GPT          & 74.66 & 0.311 & \textbf{0.0072} & \textbf{0.0120} \\
+& BERT         & 67.02 & 0.301 & 0.0094 & 0.0144 \\
+& T5           & 67.80 & 0.329 & 0.0077 & 0.0124 \\
+& GPT-2 (ours) & 82.57 & 0.324 & 0.0089 & 0.0147 \\
 \hline
 \end{tabular}
 \end{table*}
