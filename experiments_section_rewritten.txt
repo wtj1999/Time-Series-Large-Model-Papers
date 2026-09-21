@@ -268,11 +268,11 @@ Table \ref{tab:length_sensitivity} shows that the useful context range depends o
 & \multicolumn{3}{c}{\textbf{Oxford}} \\
 & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE}
 & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE}
-& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\
+& \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\ 
 \hline
-2  & 0.0263 & 0.0340 & 0.0354 & 0.0142 & 0.0263 & 0.0296 & \textbf{0.0071} & \textbf{0.0123} & \textbf{0.0090} \\
+2  & 0.0263 & 0.0340 & 0.0354 & 0.0142 & 0.0263 & 0.0296 & 0.0092 & 0.0142 & 0.0115 \\
 4  & 0.0249 & \textbf{0.0301} & \textbf{0.0337} & 0.0145 & 0.0263 & 0.0290 & 0.0073 & 0.0123 & 0.0092 \\
-6  & \textbf{0.0249} & 0.0309 & 0.0337 & 0.0139 & \textbf{0.0248} & \textbf{0.0265} & 0.0092 & 0.0142 & 0.0115 \\
+6  & \textbf{0.0249} & 0.0309 & 0.0337 & 0.0139 & \textbf{0.0248} & \textbf{0.0265} & \textbf{0.0071} & \textbf{0.0123} & \textbf{0.0090} \\
 8  & 0.0284 & 0.0337 & 0.0387 & \textbf{0.0138} & 0.0257 & 0.0274 & 0.0079 & 0.0129 & 0.0100 \\
 12 & 0.0285 & 0.0336 & 0.0378 & 0.0144 & 0.0268 & 0.0299 & 0.0091 & 0.0139 & 0.0114 \\
 \hline
