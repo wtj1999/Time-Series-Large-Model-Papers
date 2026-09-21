@@ -252,5 +252,15 @@ Pooling scales $\mathcal{K}$
 
 The history-length experiment evaluates the balance between degradation context and the number of valid windows. The depth study measures whether additional pretrained blocks supply useful abstraction or introduce unnecessary capacity for the available battery data. Varying $N_a$ tests the granularity of cross-indicator interaction, whereas the LoRA study measures the adaptation capacity required to bridge language and battery sequences. Finally, the pooling configurations determine whether a single smoothing scale is sufficient or whether multiple temporal resolutions are needed to separate gradual fading from local recovery. Parameter conclusions should be drawn from the validation-consistent trends after the corresponding results are available.
 
+\paragraph{Historical Input Length $L$.}
+The historical input length $L$ directly determines the amount of degradation history available to the model. A short historical window provides limited information about the degradation trajectory, whereas an excessively long window introduces redundant historical patterns and reduces the number of valid training windows. The results show that $L=16$ provides the most effective balance between historical degradation information and available training samples. Therefore, $L=16$ is adopted as the default historical input length.
+
+\paragraph{Retained GPT-2 Depth $N_l$.}
+The retained GPT-2 depth $N_l$ determines the representation capacity of the pretrained backbone for modeling battery degradation sequences. Increasing the number of retained blocks initially improves the extraction of high-level temporal representations, while excessive depth introduces redundant parameters and unnecessary computational overhead for the available battery data. The results demonstrate that $N_l=6$ achieves the best overall prediction performance, providing sufficient representation capacity without introducing excessive model complexity. Accordingly, six GPT-2 blocks are retained in the proposed framework.
+
+\paragraph{Cross-HI Attention Heads $N_a$.}
+The number of cross-HI attention heads $N_a$ controls the granularity of interactions among different health indicators. A small number of heads limits the diversity of cross-indicator relationships that can be captured, whereas excessively increasing the number of heads does not provide further predictive benefits and may introduce redundant interaction patterns. The experimental results show that $N_a=4$ achieves the most effective cross-HI representation and yields the best overall prediction performance. Therefore, four cross-HI attention heads are adopted as the default configuration.
+
+Overall, the sensitivity analysis establishes $L=16$, $N_l=6$, and $N_a=4$ as the default configuration of the proposed framework. These settings provide an effective balance between historical degradation information, pretrained representation capacity, and cross-indicator interaction.
 
 
