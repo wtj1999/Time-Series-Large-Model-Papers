@@ -318,4 +318,15 @@ The number of cross-HI attention heads $N_a$ controls the granularity of interac
 
 Overall, the sensitivity analysis establishes $L=16$, $N_l=6$, and $N_a=4$ as the default configuration of the proposed framework. These settings provide an effective balance between historical degradation information, pretrained representation capacity, and cross-indicator interaction.
 
+\subsection{Visualization}
+
+To provide an intuitive comparison of the SOH estimation performance, we visualize the prediction curves of CNN--LSTM, Transformer, GPT4TS, and the proposed MHILLM on representative cells from the NASA, CALCE, and Oxford datasets. For each cell, a historical window is shifted forward by one record at each prediction step, producing a continuous SOH trajectory. The predicted values are compared with the corresponding ground-truth SOH values in Figs.~\ref{fig:nasa_prediction}--\ref{fig:oxford_prediction}.
+
+On the NASA dataset, all models capture the overall capacity-degradation tendency, but the baseline predictions exhibit visible deviations around local fluctuations and recovery points. CNN--LSTM produces a relatively smooth trajectory and consequently misses several short-term variations. Transformer and GPT4TS provide improved trend tracking, although prediction offsets remain in some degradation intervals. In comparison, MHILLM follows both the long-term fading trend and the local variations more closely, resulting in the highest agreement with the ground-truth curve.
+
+A similar pattern can be observed on the CALCE dataset. The longer degradation sequence contains irregular capacity changes that make continuous estimation more difficult. The baseline models capture the general downward tendency but produce larger deviations in regions with rapid changes or temporary capacity recovery. MHILLM maintains a more stable prediction trajectory and responds more accurately to these local variations. This result indicates that jointly modeling the trend and fluctuation components helps preserve both global degradation information and short-term dynamics.
+
+For the Oxford dataset, the prediction task is performed over consecutive characterization records. Although the sampling convention differs from that of NASA and CALCE, MHILLM still produces predictions that closely overlap with the reference SOH trajectory. The competing methods show larger local errors, particularly near turning points where the degradation rate changes. By integrating cross-HI interactions with the sequential representation of GPT-2, MHILLM provides more accurate estimates across different aging stages.
+
+Overall, the visualization results are consistent with the quantitative evaluation. MHILLM achieves the closest correspondence between the predicted and ground-truth SOH curves on all three datasets. Its advantage is particularly evident around nonlinear degradation regions and short-term capacity fluctuations, demonstrating its ability to capture both gradual battery aging and local recovery behavior.
 
