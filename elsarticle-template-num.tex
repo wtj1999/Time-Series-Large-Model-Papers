@@ -1,0 +1,705 @@
+
+\documentclass[preprint,12pt]{elsarticle}
+
+\usepackage{amssymb}
+%\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{booktabs} 
+\usepackage{bm}
+\usepackage{fancyhdr}
+\usepackage{multirow}
+%% The amsthm package provides extended theorem environments
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{dblfnote}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{units}
+\usepackage{makecell}
+%\usepackage{setspace}
+%\usepackage{biblatex}
+%\linespread{1.6} %1.6
+%\usepackage{subfig}
+%\usepackage{subcaption}
+\usepackage{soul}
+\usepackage{color, xcolor} 
+
+
+%% The lineno packages adds line numbers. Start line numbering with
+%% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it on
+%% for the whole article with \linenumbers.
+%\usepackage{lineno}
+
+
+\journal{Knowledge-Based Systems}
+
+\begin{document}
+
+\begin{frontmatter}
+
+
+\title{Multi-Health-Indicator-Enhanced Pretrained Large Language Model for State-of-Health Estimation of Lithium-ion Batteries}
+
+
+\author{Hongyu Zhang}
+\address[hfut]{Hefei University of Technology, Hefei, 230027, China}
+\author{Tangjie Wu\corref{cor1}}
+\ead{wtj1999@mail.ustc.edu.cn}
+\cortext[cor1]{Corresponding author.}
+\address[ustc]{University of Science and Technology of China, Hefei, 230027, China}
+
+
+\begin{abstract}
+Lithium-ion batteries have been widely deployed in electric vehicles, portable electronics, and grid-scale energy storage systems, where accurate state-of-health (SOH) estimation is of great importance for ensuring their reliable and safe operation. Although existing data-driven methods have shown promising results, they remain relatively small in scale and are incapable of learning comprehensive sequential representations from large-scale cross-chemistry cycling data to reason intricate degradation patterns obscured in entangled health-indicator series; moreover, they treat each health indicator (HI) in isolation or naively concatenate multiple HIs, failing to exploit the synergistic information embedded in cross-HI interactions that underpin distinct electrochemical degradation mechanisms. Recently, pre-trained large models have demonstrated impressive performance in natural language processing (NLP), computer vision (CV), and time series analysis. However, large models are rarely
+  applied to battery SOH estimation due to the lack of a principled way to bridge the modality gap between multivariate HI series and language tokens, as well as the absence of an effective scheme to capture cross-HI dependencies within the pre-trained backbone. To resolve this issue, we propose a Multi-Health-Indicator-enhanced Pre-Trained Large Language Model, namely \textbf{MHILLM}, innovatively leveraging the powerful reasoning ability of Large Language Models (LLMs) for accurate battery SOH estimation. Specifically, we first construct a comprehensive set of HIs from partial charging and discharging curves of each cycle. Then, to capture disentangled degradation patterns and mitigate the well-known random capacity regeneration phenomenon, we perform cycle-decomposition on each HI channel to separate the long-term fading trend from the short-term recovery component. Moreover, we devise a novel cross-HI attention module that explicitly models the pairwise interactions between HIs, enabling the model to adaptively emphasize the most degradation-informative indicators under varying operating conditions and suppress redundant ones, thereby achieving chemistry-agnostic robustness. Furthermore, we leverage a partial-freezing autoregressive fine-tuning strategy, jointly with Low-Rank Adaptation (LoRA), to align the pre-trained LLM with battery HI sequences and learn degradation-aware representations while preserving its foundational reasoning capability.  Afterwards these representations are fed into a lightweight regression head to produce the final SOH estimate., which is grounded in physically-meaningful scalar HIs, disentangled degradation components, and cross-HI contextual consistency that collectively maintain electrochemical coherence. Extensive experiments on four public battery datasets demonstrate the performance superiority of MHILLM over state-of-the-art methods, as well as its strong cross-chemistry and cross-configuration generalization ability.
+
+\end{abstract}
+
+\begin{keyword}
+State-of-health estimation; Lithium-ion batteries; Large language models; Multi-health-indicator; Cross-HI attention; Cycle-decomposition; Cross-chemistry generalization
+
+\end{keyword}
+
+\end{frontmatter}
+
+\section{Introduction}
+Nowadays, with the accelerated deployment of electric vehicles, portable electronics, and grid-scale energy storage systems, lithium-ion batteries have become the dominant energy storage devices owing to their high energy density, low self-discharge rate, and long cycle life. However, during long-term operation, lithium-ion batteries inevitably suffer from complicated internal degradation mechanisms, such as solid electrolyte interphase (SEI) growth, lithium plating, and loss of active material, which gradually deteriorate their available capacity and may even trigger catastrophic safety accidents. To resolve this issue, accurate state-of-health (SOH) estimation is of critical importance for ensuring reliable and safe battery operation.
+
+  Battery SOH estimation has been extensively investigated for decades. At the early stage, some model-based methods were developed to characterize the internal electrochemical phenomena of lithium-ion batteries. Among them, electrochemical models, such as the single-particle model and the pseudo-two-dimensional model [1], utilize a series of partial differential equations to describe the electrochemical reaction processes inside the battery. Although these models can offer high fidelity, they strongly rely on extensive parameter identification, which can be impractical for online estimation. Meanwhile, as another typical type of model-based approaches, equivalent circuit models (ECMs) [2,3] simulate the battery's internal behavior with circuit components such as resistors and capacitors. Although ECMs enjoy low computational complexity and easy parameter identification, they cannot fully capture the internal changes of batteries, often yielding degraded estimation accuracy.
+
+  To overcome the limitations of model-based methods, machine learning (ML)-based methods have been extensively explored. These methods employ various algorithms to establish the relationships between health indicators (HIs) extracted from measured data and the battery's SOH. For instance, some methods [4–6] craft multiple HIs from voltage, current, and temperature curves, and feed them into Gaussian process regression (GPR), support vector machine (SVM), or random forest (RF) for SOH estimation. Although those methods are easy to interpret, they strongly rely on cumbersome procedures for HI selection and model identification, which is labor-intensive for a specific application. In addition, the ML-based approaches exhibit limited generalization capability because cycling data vary under different operating conditions and battery configurations, leading to discrepancies in features that ML-based models fail to effectively capture. As diverse end products necessitate different energy demands, the configurations of lithium-ion batteries vary, causing such cycling variations, and one has to train a SOH estimator separately for each configuration, resulting in substantial inefficiency.
+
+  Over the years, benefiting from the prosperity of deep learning, deep neural network (DNN)-based methods have garnered significant attention. Due to their strong robustness of series modeling, DNN-based methods generally achieve superior performance than traditional ML ones. A class of DNN-based methods [7–9] introduce long short-term memory (LSTM) networks or gated recurrent units (GRU) to capture temporal dependencies in battery cycling series. The recurrent architecture can effectively model long-term degradation trends, but often suffers from the problem of gradient vanishing or explosion, significantly limiting the estimation performance. Another class of DNN-based methods apply the convolutional neural network (CNN) in the temporal domain to extract local degradation features. Due to the limitation of the one-dimension convolution kernels, they can only perceive bounded time slots, thus failing to extract long-term dependencies. Later, some methods [10–12] propose hybrid neural networks, which employ the CNN to extract local features and the LSTM to capture temporal dependencies, and can further improve the estimation accuracy. However, these DNN-based methods are typically trained from scratch on limited battery cycling data and cannot learn comprehensive sequential representations from large-scale cross-chemistry data, thus yielding undesirable generalization performance on unseen battery chemistries and configurations. Moreover, they struggle to handle the well-known random capacity regeneration phenomenon [13], easily mistaking transient capacity recovery for genuine health improvement.
+
+  Inspired by its great advances in natural language processing (NLP) and computer vision (CV), Transformer has been introduced to battery SOH estimation. Benefiting from the attention mechanism, Transformer-based methods can effectively exploit long-term dependencies in cycling series data. For instance, some methods [14–16] propose the Transformer encoder–decoder structure for SOH estimation and achieve promising results. To improve computational efficiency, Li et al. [17] develop BMSFormer, which employs a Local-Global Fusion Attention module to reduce computational complexity while capturing both short-term and long-term features. To enable configuration-agnostic estimation, Park et al. [18] leverage the attention weights of a multi-objective transformer to identify five dominant HIs that are sensitive to SOH but insensitive to battery configuration. As existing Transformer-based methods are still limited in scale and trained from scratch, they may fail to fully unleash the potential
+   of attention mechanisms in reasoning intricate degradation patterns obscured in entangled cycling series. The development of large-scale foundation models for battery health diagnostics remains nascent, which will be investigated in the present paper.
+
+  Recently, Large Language Models (LLMs) have been the most promising method to process multiple NLP tasks, such as text generation, question answering, and machine translation. After being trained on large-scale text corpora, LLMs demonstrate the strong capability of learning intricate semantic representations and underlying relationships between entities. A case in point is the Generative Pre-trained Transformer (GPT), such as GPT-2 and GPT-3, which have billions of parameters and achieve impressive performance in few-shot and zero-shot learning. Recent advances of LLMs have explored their applications in time series data mining. Among them, GPT4TS [19] builds a unified framework with partially frozen LLMs for time series analysis, which only fine-tunes the positional embeddings and layer normalization layers while freezing the self-attention and feedforward layers of LLMs. Moreover, prompt tuning provides an efficient way to orient LLMs towards specific downstream tasks. Along this line, PromptCast [20] transforms the numerical input and output into prompts, aiming to directly apply LLMs for forecasting tasks. However, large models are rarely applied to battery SOH estimation. This is mainly due to the lack of a principled way to bridge the modality gap between multivariate cycling series and language tokens, as well as the absence of an effective scheme to incorporate battery domain knowledge into the pre-trained backbone. Existing LLM-based time series methods only leverage fixed or data-driven prompts. This naive manner may fail to capture the physically-meaningful health indicators and intrinsic degradation mechanisms, which are particularly important for battery SOH estimation.
+
+ To exploit the powerful reasoning capability of LLMs for battery SOH estimation, we develop a novel Multi-Health-Indicator-enhanced Pre-Trained Large Language Model, namely MHILLM. We begin by constructing a comprehensive set of scalar health indicators from partial charging and discharging curves of each cycle, which includes constant-current charge time, constant-current discharge time, incremental-capacity peak magnitude and position, differential-voltage valley depth, sample entropy, and discharge voltage curve slope, among others. Then, to capture disentangled degradation patterns and mitigate the well-known random capacity regeneration phenomenon, we perform cycle-decomposition on each HI channel to separate its long-term fading trend from its short-term recovery component, and learn the disentangled patterns through individual modeling of the two components. To boost LLM's performance for battery health estimation, we innovatively devise a cross-HI attention module to explicitly model the pairwise interactions between HIs, enabling the model to adaptively emphasize the most degradation-informative indicators under varying operating conditions and suppress redundant ones. Moreover, to familiarize LLMs with battery HI sequences, we introduce a partial-freezing autoregressive strategy to fine-tune the backbone LLMs and learn HI-aware degradation representations for the downstream estimation task. Kindly note that the partial-freezing strategy only updates the positional embeddings and layer normalization layers, jointly with Low-Rank Adaptation (LoRA), retaining the powerful reasoning capability of pre-trained LLMs while adapting to the battery domain. The learned representations are subsequently fed into a lightweight regression layer to produce the final SOH estimate.
+
+  Our key contributions can be summarized as follows.
+\begin{itemize}
+\item We develop a per-HI cycle-decomposition architecture to separately model the long-term fading trend and short-term recovery components of individual health-indicator sequences. This design enables our model to effectively exploit the distinct degradation characteristics inherent in disentangled HI patterns and well handle the random capacity regeneration phenomenon.
+
+\item We devise a novel cross-HI attention paradigm to boost LLM's performance in SOH estimation, in which the pairwise interactions between physically meaningful HIs are explicitly modeled to capture their synergistic dependencies. This would empower LLMs with the ability to adaptively fuse heterogeneous HIs according to their degradation-informativeness under varying operating conditions, and well guide the SOH estimation in a chemistry-agnostic manner.
+
+\item We introduce a two-stage training strategy, jointly with the partial-freezing autoregressive fine-tuning, to align the backbone LLMs with battery data and generate HI-aware representations. Furthermore, to facilitate downstream SOH estimation, we adopt a lightweight regression layer to map the learned representations to SOH values.
+
+\item Extensive experiments on four public battery datasets demonstrate that our proposed MHILLM can significantly improve the estimation performance by well exploiting LLM's capability in the realm of battery SOH estimation, and exhibit strong cross-chemistry and cross-configuration generalization ability.
+\end{itemize}
+
+
+
+\section{Related Work}
+
+\subsection{SOH estimation}
+
+State-of-health (SOH) estimation has been extensively investigated to support the safe operation, maintenance, and second-life utilization of lithium-ion batteries. Existing methods can be broadly divided into model-based and data-driven methods. Model-based methods describe battery degradation through electrochemical models or equivalent circuit models and infer SOH by identifying aging-sensitive parameters. These methods provide physically meaningful diagnostic results, but their performance depends heavily on model fidelity and parameter identification, which are difficult to maintain under varying temperatures, load profiles, and aging modes \cite{han2019review,che2023health}. In contrast, data-driven methods establish a direct mapping from measurable signals to battery capacity without explicitly modeling the internal electrochemical reactions, and have therefore received increasing attention with the growing availability of battery cycling data \cite{li2019datadriven}.
+
+Early data-driven studies generally rely on handcrafted health indicators and conventional machine learning models. Richardson et al. employ Gaussian process regression (GPR) to forecast battery SOH and quantify the uncertainty associated with the prediction \cite{richardson2017gaussian}. Yang et al. extract four aging-sensitive features from charging curves and use gray relational analysis and an improved GPR model for SOH estimation \cite{yang2018novel}. Hu et al. further integrate fusion-based feature selection with machine learning to identify informative indicators from battery measurements \cite{hu2020battery}. These approaches achieve reliable estimation with relatively compact models. However, their accuracy is closely related to the quality of manually designed features, while the selected indicators may become unavailable or exhibit different distributions under partial charging, dynamic loads, and unseen battery chemistries.
+
+Deep neural networks alleviate this dependence by automatically learning degradation representations from raw or lightly processed cycling signals. Convolutional neural networks capture local variations in voltage or incremental-capacity curves, whereas recurrent architectures model the evolution of degradation over successive cycles. Lu et al. introduce a deep learning framework that estimates SOH without requiring additional degradation experiments for the target battery, demonstrating the potential of knowledge transfer across cells \cite{lu2023deep}. Xiong et al. directly map multi-neighboring incomplete charging segments to SOH through an end-to-end CNN--LSTM framework \cite{xiong2024end}. Nevertheless, battery aging is reflected simultaneously by voltage, current, time, capacity, resistance, and their derived curves. A model built around a single indicator or a fixed charging interval may overlook complementary degradation information. Moreover, the limited amount of labeled aging data and the distribution shift among operating conditions still restrict the generalization of task-specific deep models. These limitations motivate the joint modeling of multiple health indicators and the reuse of knowledge learned through large-scale pretraining.
+
+\subsection{Transformer for SOH}
+
+The Transformer replaces recurrence with multi-head self-attention and can directly model pairwise dependencies over an entire sequence \cite{vaswani2017attention}. This property is particularly suitable for battery degradation signals, where informative changes may occur at distant sampling positions or across widely separated cycles. Compared with recurrent networks, Transformer-based estimators provide shorter information paths for long-term dependency modeling and allow different attention heads to characterize complementary degradation patterns.
+
+Recent studies have adapted this architecture to SOH estimation from different battery representations. Gu et al. combine a convolutional network with a Transformer, using convolution to extract local patterns and self-attention to learn global dependencies from charging data \cite{gu2023novel}. Bai and Wang develop a convolutional Transformer-based multiview framework to aggregate degradation information from multiple views \cite{bai2023convolutional}. Chen et al. transform battery measurements into image-like representations and employ a vision Transformer for health estimation \cite{chen2023vision}. Jia et al. combine a bidirectional gated recurrent unit with a Transformer to model both sequential evolution and long-range relationships in capacity degradation \cite{jia2023state}. These studies demonstrate that attention mechanisms can effectively enhance global feature interaction beyond conventional CNN- or RNN-based estimators.
+
+More recent work focuses on efficiency and practical measurement constraints. Li et al. propose BMSFormer, which uses a strongly correlated health indicator, depthwise feature fusion, and local--global fusion attention to balance estimation accuracy and computational cost \cite{li2024bmsformer}. Shu et al. select an informative partial voltage segment and use a Transformer to capture its temporal dependencies, enabling SOH estimation when complete charging curves are unavailable \cite{shu2025voltage}. Park et al. exploit attention weights to identify health indicators that are informative for SOH but insensitive to battery configuration, and construct a configuration-agnostic Transformer estimator \cite{park2026configuration}. Although these methods substantially advance long-range modeling, most Transformer-based SOH models are still trained from scratch for a predefined input representation and dataset. Consequently, their transferable knowledge is bounded by the scale and diversity of the available battery data. A pretrained backbone capable of adapting general sequential representations to multiple health indicators provides a promising direction for improving data efficiency and robustness.
+
+\subsection{Pretrained Large Language Model}
+
+Pretrained large language models (LLMs) learn general-purpose representations from large corpora and transfer the acquired knowledge to downstream tasks through prompting, fine-tuning, or representation reprogramming. Their Transformer backbones contain powerful sequence modeling modules, inspiring recent attempts to repurpose them for numerical time series. Instead of training a forecasting architecture from scratch, Zhou et al. retain the self-attention and feed-forward layers of a frozen pretrained model and adapt only a small subset of components, showing that pretrained language or vision Transformers can support forecasting, classification, anomaly detection, and few-shot time-series analysis \cite{zhou2023one}. Gruver et al. encode numerical observations as strings and formulate forecasting as next-token prediction, demonstrating the zero-shot forecasting capability of pretrained LLMs without task-specific parameter training \cite{gruver2023large}.
+
+Another line of research aligns continuous time series with the representation space of an LLM. Jin et al. propose Time-LLM, which reprograms time-series patches using text prototypes and supplements them with a prompt-as-prefix while keeping the LLM backbone frozen \cite{jin2024timellm}. Chang et al. develop a two-stage fine-tuning strategy that first aligns a pretrained LLM with temporal patterns and then adapts it to downstream forecasting tasks \cite{chang2023llm4ts}. These methods indicate that the general sequence priors contained in pretrained LLMs can benefit numerical prediction, especially when labeled downstream data are scarce. However, direct reuse of an LLM does not automatically resolve the discrepancy between discrete language tokens and continuous battery measurements. Battery SOH estimation further differs from general forecasting because heterogeneous health indicators describe distinct but coupled electrochemical degradation phenomena and may have different scales, noise levels, and temporal resolutions.
+
+Therefore, an effective LLM-based SOH estimator should not simply treat battery measurements as ordinary text tokens. It should construct an explicit interface between multiple health indicators and the pretrained representation space, while preserving indicator-specific information and enabling cross-indicator interaction. Existing Transformer-based battery studies mainly learn such interactions from limited battery data, whereas current LLM-based time-series methods are rarely tailored to battery health assessment. This gap motivates our multi-health-indicator-enhanced pretrained LLM, which leverages complementary degradation evidence to activate transferable sequential knowledge for accurate and robust SOH estimation.
+
+  
+\section{Methodology}  
+In this section, we formulate the concerned battery SOH estimation problem and then present the proposed MHILLM. Fig.2 illustrates the overall structure of MHILLM.
+
+
+
+\subsection{Notations and Definitions}
+We leverage LLMs to estimate the state-of-health of lithium-ion batteries from a comprehensive set of health indicators extracted from online measurable cycling data. For a target battery, denote the multivariate raw measurements sampled within cycle $t$ — including voltage $V_t(\tau)$, current $I_t(\tau)$, temperature $\Theta_t(\tau)$, and accumulated charge-throughput $Q_t(\tau)$ at sampling instant $\tau$, as the within-cycle signal $\mathbf{m}_t = \{V_t(\tau), I_t(\tau), \Theta_t(\tau), Q_t(\tau)\}, {\tau \in 1}^{N_s}$, where $N_s$ is the number of sampling points within one cycle. From $\mathbf{m}_t$, we extract $N_h$ physically-meaningful health indicators (HIs), assembled as the per-cycle HI vector $\mathbf{h}_t = [h_{t,1}, h_{t,2}, \ldots, h_{t,N_h}]^{\top} \in \mathbb{R}^{N_h}$. The detailed construction of each HI will be presented in Section 3.2. Stacking $L$ consecutive cycles yields the historical MHI matrix
+\begin{gather}
+\mathbf{H}_{t-L+1:t} = [\mathbf{h}_{t-L+1}; \mathbf{h}_{t-L+2}; \ldots; \mathbf{h}_{t}] \in \mathbb{R}^{L \times N_h},
+\end{gather}
+which serves as the original input to MHILLM.
+
+
+\textbf{Problem Formulation}.
+The state-of-health of a battery at cycle $t$ is defined as the ratio between its current maximum available capacity $c_t$ and the nominal capacity $c_{\text{rated}}$ as
+\begin{gather}
+\text{SOH}_t = \frac{c_t}{c_{\text{rated}}} \times 100 \%.
+\end{gather}
+Kindly note that $c_t$ is only obtainable through a laboratory full-discharge calibration test and is not measurable by the battery management system (BMS) in field deployment. Therefore, SOH estimation must rely solely on the MHI matrix derived from online measurable quantities. 
+
+According to the above notation, the battery SOH estimation problem can be formulated as follows. Given the historical MHI matrix $\mathbf{H}_{t-L+1:t} \in \mathbb{R}^{L \times N_h}$ from the last $L$ cycles, we would like to estimate the SOH of the next cycle,
+\begin{gather}
+\mathbf{H}_{t-L+1:t} \Longrightarrow \widehat{\text{SOH}}_{t+1}.
+\end{gather}
+
+\subsection{Multi-Health-Indicator extraction}
+To empower the LLM with rich battery domain knowledge, we construct a comprehensive set of health indicators from partial charging and discharging curves of each cycle. These indicators span four complementary perspectives, including charging kinetics, discharging kinetics, thermodynamic phase behavior, and signal complexity, and together provide a multi-faceted characterization of the battery's degradation state. Specifically, we extract the following HIs.
+
+\textbf{Time-domain HIs from partial charging curves.} Following the high-correlation voltage-window strategy of [17], we crop the constant-current (CC) charging segment within $[V_l^c, V_u^c]$ and extract two time-domain HIs as
+\begin{gather}
+h_{t,1} = \tau_{\text{CCCT}}^{(t)} = \tau\bigl(V_t = V_u^c\bigr) - \tau\bigl(V_t = V_l^c\bigr), \\
+h_{t,2} = \tau_{\text{CV}}^{(t)} = \tau\bigl(I_t \leq I_{\text{th}}\bigr) - \tau\bigl(V_t \geq V_u^c\bigr),
+\end{gather}
+where $h_{t,1}$ is the CC charging time (CCCT) within the cropped window, $h_{t,2}$ is the constant-voltage (CV) charging time with $I_{\text{th}}$ being the cut-off current, and $\tau(\cdot)$ denotes the first-passage time of the corresponding event.
+
+\textbf{Time-domain HIs from partial discharging curves.} Symmetrically, we crop the CC discharging segment within $[V_l^d, V_u^d]$ and extract
+\begin{gather}
+h_{t,3} = \tau_{\text{CCDT}}^{(t)} = \tau\bigl(V_t = V_l^d\bigr) - \tau\bigl(V_t = V_u^d\bigr),
+\end{gather}
+where $h_{t,3}$ is the CC discharging time (CCDT). CCCT and CCDT jointly characterize the lithium-ion intercalation/deintercalation kinetics at the two electrode interfaces.
+
+\textbf{Incremental-capacity and differential-voltage HIs.} The incremental-capacity (IC) and differential-voltage (DV) analyses are highly sensitive to active-material loss (LAM) and lithium-inventory loss (LLI). We compute the IC curve $dQ_t/dV$ and DV curve $dV_t/dQ$ over the partial charging segment, and extract four HIs:
+\begin{gather}
+h_{t,4} = \text{IC}_{\text{peak}}^{(t)} = \max{V}\bigl(dQ_t/dV\bigr),\quad h_{t,5} = V^{\star}\bigl(\text{IC}_{\text{peak}}^{(t)}\bigr), \\
+h_{t,6} = \text{DV}_{\text{valley}}^{(t)} = \min{Q}\bigl(dV_t/dQ\bigr),\quad h_{t,7} = Q^{\star}\bigl(\text{DV}_{\text{valley}}^{(t)}\bigr),
+\end{gather}
+where $h_{t,4}$ and $h_{t,5}$ are the IC-peak magnitude and its corresponding voltage position, while $h_{t,6}$ and $h_{t,7}$ are the DV-valley magnitude and its charge-throughput position. Magnitudes reflect the amount of electrochemically active material, while positions reveal thermodynamic shifts caused by polarization and resistance growth.
+
+\textbf{Statistical and geometric HIs.} To capture higher-order signal characteristics beyond local electrochemical features, we additionally derive two HIs:
+\begin{gather}
+h_{t,8} = \text{SampEn}^{(t)}\bigl(V_t^{\text{dis}}(\tau)\bigr), \\
+h_{t,9} = \text{slope}^{(t)} = \frac{\sum_{\tau \in \mathcal{R}}\bigl(V_t^{\text{dis}}(\tau) - \bar{V}t\bigr)(\tau - \bar{\tau})}{\sum{\tau \in \mathcal{R}}(\tau - \bar{\tau})^2}, 
+\end{gather}
+where $h_{t,8}$ is the sample entropy of the discharge voltage sequence, capturing signal irregularity caused by SEI heterogeneity and uneven lithium deposition; $h_{t,9}$ is the slope of the discharge voltage curve in the linear plateau region, reflecting the overall internal resistance and polarization. Stacking all nine indicators yields the per-cycle HI vector $\mathbf{h}_t \in \mathbb{R}^{9}$. To mitigate the heterogeneity among different HI scales (e.g., seconds for time-domain HIs, Ah/V for IC peak, dimensionless for sample entropy), we apply a z-score standardization to each HI channel using the training-set statistics.
+
+\subsection{Cycle decomposition}
+To facilitate the learning of entangled degradation patterns, we adopt a per-HI cycle-decomposition strategy to decompose each HI channel into a long-term fading trend component and a short-term recovery component. These two components respectively represent the irreversible electrochemical degradation (e.g., SEI growth, LLI, LAM) and the reversible capacity regeneration phenomenon caused by lithium-ion redistribution during rest periods, both of which coexist in every degradation-sensitive HI. Specifically, we extend the MOEDecomp [44] with a physically informed asymmetric filter bank, which leverages multiple average pooling filters to capture multiscale temporal information from each HI sequence. Dropping the cycle subscript for brevity and focusing on the $j$-th HI channel $\mathbf{h}_{:,j} \in \mathbb{R}^{L}$, the decomposition process is expressed as
+\begin{gather}
+\mathbf{h}_{:,j}^{\mathbf{T}} = \text{Softmax}\bigl(w(\mathbf{h}_{:,j})\bigr) * f(\mathbf{h}_{:,j}),  \\
+\mathbf{h}_{:,j}^{\mathbf{R}} = \mathbf{h}_{:,j} - \mathbf{h}_{:,j}^{\mathbf{T}},
+\end{gather}
+where $w(\mathbf{h}_{:,j}) \in \mathbb{R}^{S}$ denotes the data-based weights for $S$ pooling filters and $f(\mathbf{h}_{:,j}) = f_{k_s}(\mathbf{h}_{:,j})$ represents a collection of pooling filters with multiple kernel sizes ${k_s}$, capturing the fading patterns at multiple time scales. By independently performing decomposition for each HI channel, we obtain the trend matrix $\mathbf{H}^{\mathbf{T}} \in \mathbb{R}^{L \times N_h}$ and the recovery matrix $\mathbf{H}^{\mathbf{R}} \in \mathbb{R}^{L \times N_h}$.
+
+\textbf{Instance Normalization}.  
+As the battery HI sequences often exhibit non-stationary behavior caused by varying operating conditions and progressive aging, we introduce Instance Normalization [45] to mitigate the effects of the data distribution shift. The trend and recovery matrices are normalized independently as follows,
+\begin{gather}
+\bar{\mathbf{H}}^{\mathbf{T}} = \gamma^{\mathbf{T}} \cdot \frac{\mathbf{H}^{\mathbf{T}} - \boldsymbol{\mu}^{\mathbf{T}}}{\sqrt{\boldsymbol{\sigma}^{\mathbf{T},2} + \epsilon}} + \boldsymbol{\beta}^{\mathbf{T}},   \\
+\bar{\mathbf{H}}^{\mathbf{R}} = \gamma^{\mathbf{R}} \cdot \frac{\mathbf{H}^{\mathbf{R}} - \boldsymbol{\mu}^{\mathbf{R}}}{\sqrt{\boldsymbol{\sigma}^{\mathbf{R},2} + \epsilon}} + \boldsymbol{\beta}^{\mathbf{R}}, 
+\end{gather}
+where $\boldsymbol{\mu}^{c},\boldsymbol{\sigma}^{c}\in\mathbb{R}^{N_h}$ are the mask-aware channel-wise mean and standard deviation calculated from observed entries along the cycle dimension for component $c\in\{\mathbf{T},\mathbf{R}\}$, $\boldsymbol{\gamma}^{c}$ and $\boldsymbol{\beta}^{c}$ are learnable affine parameters, and $\epsilon$ is a small constant for numerical stability. In implementation, the affine scaling is applied channel-wise through element-wise multiplication. The training-set z-score transformation in Section 3.2 first harmonizes the physical units of different HIs, whereas instance normalization further reduces battery-specific shifts within each input window. The two components are normalized independently because their amplitudes and temporal characteristics are substantially different. Nevertheless, the removed mean and variance may themselves indicate the absolute health level. We therefore preserve these statistics and encode them as degradation-context tokens in the subsequent tokenization stage. 
+
+\subsection{Cycle-wise embedding and HI-aware tokenization}
+MHILLM treats every battery cycle as one temporal step. For component $c\in\{\mathbf{T},\mathbf{R}\}$, the scalar value of the $j$-th HI at the $\ell$-th cycle, $\bar{h}_{\ell,j}^{c}$, is first mapped into the hidden space as
+\begin{gather}
+\mathbf{x}_{\ell,j}^{c}
+=\bar{h}_{\ell,j}^{c}\mathbf{w}_{e}^{c}
++\mathbf{e}_{j}^{\mathrm{HI}},
+\end{gather}
+where $\mathbf{w}_{e}^{c}\in\mathbb{R}^{d}$ is a learnable value-projection vector and $\mathbf{e}_{j}^{\mathrm{HI}} \in \mathbb{R}^{d}$ denote the HI identity embeddings, respectively. The value projection encodes the numerical magnitude and the HI identity embedding distinguishes indicators with different physical meanings. Accordingly, each cycle is represented by the HI-aware token set
+\begin{gather}
+\mathbf{X}_{\ell}^{c}
+=[\mathbf{x}_{\ell,1}^{c};\ldots;\mathbf{x}_{\ell,N_h}^{c}]
+\in\mathbb{R}^{N_h\times d}.
+\end{gather}
+This cycle-wise construction preserves the original sampling resolution and establishes a direct correspondence between one LLM temporal token and one battery cycle.
+
+To restore the absolute distribution information removed by instance normalization, we further construct a degradation-context token for each component as
+\begin{gather}
+\mathbf{s}^{c}=\operatorname{MLP}_{s}^{c}\left([\boldsymbol{\mu}^{c};\log(\boldsymbol{\sigma}^{c}+\epsilon)]\right)\in\mathbb{R}^{d}.
+\end{gather}
+For a completely unavailable channel, we safely set $\mu_j^c=0$ and $\sigma_j^c=1$ after global standardization. Unlike ordinary temporal tokens, $\mathbf{s}^{c}$ summarizes the global levels, variations, and availability of all HIs within the input window. It enables MHILLM to benefit from distribution alignment without discarding health-sensitive magnitude information.
+
+\subsection{Cross-HI attention}
+
+Different HIs characterize complementary degradation mechanisms and their relative importance varies across batteries and operating conditions. Simply concatenating the indicators assigns them fixed roles and leaves their pairwise interactions implicit. To address this issue, we devise a cross-HI attention module that models the relationships among all indicators within every cycle. For component $c$ and cycle $\ell$, the $a$-th attention head is computed from $\mathbf{X}_{\ell}^{c}$ as
+\begin{gather}
+\mathbf{Q}_{\ell,a}^{c}=\mathbf{X}_{\ell}^{c}\mathbf{W}_{Q,a}^{c},\quad
+\mathbf{K}_{\ell,a}^{c}=\mathbf{X}_{\ell}^{c}\mathbf{W}_{K,a}^{c},\quad
+\mathbf{V}_{\ell,a}^{c}=\mathbf{X}_{\ell}^{c}\mathbf{W}_{V,a}^{c},\\
+\mathbf{A}_{\ell,a}^{c}
+=\operatorname{Softmax}\left(
+\frac{\mathbf{Q}_{\ell,a}^{c}(\mathbf{K}_{\ell,a}^{c})^{\top}}{\sqrt{d_a}}
+\right), \\
+\mathbf{O}_{\ell,a}^{c}
+=\mathbf{A}_{\ell,a}^{c}\mathbf{V}_{\ell,a}^{c},
+\end{gather}
+where $\mathbf{W}_{Q,a}^{c},\mathbf{W}_{K,a}^{c},\mathbf{W}_{V,a}^{c}\in\mathbb{R}^{d\times d_a}$ and $d_a=d/N_a$. The matrix $\mathbf{A}_{\ell,a}^{c}\in\mathbb{R}^{N_h\times N_h}$ explicitly represents the pairwise dependencies among the available HIs in cycle $\ell$. The outputs of all heads are concatenated and combined with a residual connection,
+\begin{gather}
+\widetilde{\mathbf{X}}_{\ell}^{c}
+=\operatorname{LN}\left(
+\mathbf{X}_{\ell}^{c}
++\operatorname{Concat}_{a=1}^{N_a}(\mathbf{O}_{\ell,a}^{c})\mathbf{W}_{O}^{c}
+\right),
+\end{gather}
+where $\mathbf{W}_{O}^{c}\in\mathbb{R}^{d\times d}$. 
+We subsequently aggregate the refined HI tokens into one cycle-level multi-HI token. Rather than using average pooling, which assumes that all indicators contribute equally, an input-dependent importance score is learned as
+\begin{gather}
+e_{\ell,j}^{c}
+=(\mathbf{q}^{c})^{\top}
+\tanh(\mathbf{W}_{g}^{c}\widetilde{\mathbf{x}}_{\ell,j}^{c}
++\mathbf{b}_{g}^{c})+b_{\ell,j},\qquad
+\omega_{\ell,j}^{c}
+=\frac{\exp(e_{\ell,j}^{c})}
+{\sum_{i=1}^{N_h}\exp(e_{\ell,i}^{c})},\\
+\mathbf{u}_{\ell}^{c}
+=\sum_{j=1}^{N_h}\omega_{\ell,j}^{c}
+\widetilde{\mathbf{x}}_{\ell,j}^{c},
+\end{gather}
+where $\mathbf{W}_{g}^{c}\in\mathbb{R}^{d_g\times d}$ and $\mathbf{q}^{c},\mathbf{b}_{g}^{c}\in\mathbb{R}^{d_g}$. The weight $\omega_{\ell,j}^{c}$ quantifies the contribution of the $j$-th available HI at cycle $\ell$. Consequently, the model can suppress a noisy or weakly informative indicator while retaining the temporal position of an entirely unobserved cycle. The resulting cycle-token sequence is
+\begin{gather}
+\mathbf{U}^{c}
+=[\mathbf{s}^{c};\mathbf{u}_{1}^{c};\ldots;\mathbf{u}_{L}^{c}]
+\in\mathbb{R}^{(L+1)\times d},
+\end{gather}
+which directly preserves the cycle order while encoding HI identities, cross-HI relationships, availability, and instance-level degradation context.
+
+\subsection{Pretrained LLM adaptation}
+
+In MHILLM, we employ GPT-2 [38] as the pretrained backbone because its causal attention mechanism is naturally compatible with the progressive evolution of battery degradation. The word-embedding layer and language-modeling head are discarded, and the MHI tokens are supplied through the backbone's input-embedding interface. We retain the first $N_l$ Transformer blocks and enforce the standard causal mask. A single backbone with shared parameters is applied separately to the smooth and fluctuation token sequences. Parameter sharing encourages the two components to use a common latent space and avoids doubling the number of pretrained parameters. Given $\mathbf{U}^{c}$, the component representation is obtained as
+\begin{gather}
+\mathbf{Z}^{c}=\operatorname{GPT}_{\Theta}\left(\mathbf{U}^{c}+\mathbf{E}_{\mathrm{LLM}}^{\mathrm{pos}}\right)\in\mathbb{R}^{(L+1)\times d},
+\end{gather}
+where $\mathbf{E}_{\mathrm{LLM}}^{\mathrm{pos}}$ is the positional embedding of the backbone and $\Theta$ denotes its parameters. The value of $N_l$ and the retained block indices are reported in the implementation settings.
+
+Direct full-parameter fine-tuning on limited battery-aging data may destroy the transferable patterns acquired during pretraining and cause severe overfitting. We therefore freeze the original attention and feed-forward weights, while updating the positional embeddings and layer-normalization layers. Moreover, Low-Rank Adaptation (LoRA) [49] is inserted into the query and value slices of the fused GPT-2 attention projection. For a frozen projection $\mathbf{W}_{0}\in\mathbb{R}^{d\times d}$, its adapted form is
+\begin{gather}
+\mathbf{W}=\mathbf{W}_{0}+\frac{\alpha_{l}}{r}\mathbf{B}\mathbf{A},\qquad
+\mathbf{A}\in\mathbb{R}^{r\times d},\quad \mathbf{B}\in\mathbb{R}^{d\times r},
+\end{gather}
+where $r\ll d$ is the adaptation rank and $\alpha_l$ controls the update scale. Only $\mathbf{A}$ and $\mathbf{B}$ are optimized. This partial-freezing strategy adapts the attention directions to battery degradation sequences with a small number of trainable parameters while preserving the general sequential priors of the backbone.
+
+\textbf{Leakage-free autoregressive degradation alignment}.
+Although the pretrained backbone provides strong sequence-modeling capacity, its original inputs are word embeddings rather than continuous battery HIs. We introduce an autoregressive alignment stage to familiarize it with cycle-by-cycle battery degradation before optimizing the SOH estimator. At alignment step $\ell$, the cycle decomposition, instance statistics, degradation-context token, and cross-HI tokens are recomputed using only the historical prefix from cycle $1$ to cycle $\ell$. The LLM output corresponding to the current cycle is projected to predict all HIs of the next cycle,
+\begin{gather}
+\widehat{\bar{\mathbf{h}}}_{\ell+1}^{c}
+=(\mathbf{W}_{\mathrm{AR}}^{c})^{\top}\mathbf{z}_{\ell}^{c}
++\mathbf{b}_{\mathrm{AR}}^{c}
+\in\mathbb{R}^{N_h},
+\end{gather}
+where $\mathbf{z}_{\ell}^{c}\in\mathbb{R}^{d}$ denotes the output of the causal backbone at cycle $\ell$, $\mathbf{W}_{\mathrm{AR}}^{c}\in\mathbb{R}^{d\times N_h}$, and $\mathbf{b}_{\mathrm{AR}}^{c}\in\mathbb{R}^{N_h}$. The prediction target $\bar{\mathbf{h}}_{\ell+1}^{c}=\bar{\mathbf{H}}_{\ell+1,:}^{c}\in\mathbb{R}^{N_h}$ is the normalized smooth or fluctuation HI vector of the next cycle. The autoregressive loss is defined as
+\begin{gather}
+\mathcal{L}_{\mathrm{AR}}
+=
+\sum_{c\in\{\mathbf{T},\mathbf{R}\}}
+\sum_{\ell=1}^{L-1}
+\left\|
+\widehat{\bar{\mathbf{h}}}_{\ell+1}^{c}
+-\bar{\mathbf{h}}_{\ell+1}^{c}
+\right\|_{2}^{2}.
+\end{gather}
+ Reconstructing the next-cycle MHI vector forces the trainable tokenizer and LoRA parameters to learn degradation direction, cross-cycle continuity, and HI co-evolution instead of merely fitting scalar SOH labels. The aligned parameters then initialize the downstream estimation stage.
+
+\subsection{SOH estimation}
+
+Considering the causal backbone representation summarizes all preceding degradation information, MHILLM directly uses the final hidden state to generate the estimation results. The smooth and fluctuation representations at cycle $\ell$ are added to reconstruct the complete degradation representation,
+\begin{gather}
+\mathbf{h}_{\ell}=\mathbf{z}_{\ell}^{\mathbf{T}}+\mathbf{z}_{\ell}^{\mathbf{R}}\in\mathbb{R}^{d}.
+\end{gather}
+The resulting hidden state is fed into a linear layer to estimate the $\widehat{\operatorname{SOH}}_{\ell+1}$. During the downstream stage, we minimize the MAE loss over a mini-batch of $N_b$ samples,
+\begin{gather}
+\mathcal{L}_{\mathrm{SOH}}=\frac{1}{N_b}\sum_{n=1}^{N_b}\left|\operatorname{SOH}_{n}-\widehat{\operatorname{SOH}}_{n}\right|,
+\end{gather}
+where $\operatorname{SOH}_{n}$ denotes the ground truth of the battery sample $n$ of the next cycle.
+
+\begin{figure}[!t]%figure*是单栏的图片排版，用于大图片，双栏中放不下的
+	\centering
+	\scalebox{1}[1]{\includegraphics[width=5in]{global_branch_00.jpg}}
+	\caption{{Global branch architecture: long-term temporal modeling via a pre-trained LLM.}
+%The framework of the global branch. The global branch leverages the pre-trained LLM to capture long-term temporal patterns in wind speed data. Each turbine's wind speed series is processed individually with instance normalization and patching. We freeze some key layers while fine-tuning the positional embeddings and layer normalization parameters to align the LLM with wind series data.
+}	
+	\label{global_branch}	
+\end{figure}
+
+\section{Experiments}
+In this section, we evaluate the proposed MHILLM on three public battery datasets and compare it with representative machine-learning, deep-learning, Transformer-based, and pretrained LLM-based methods. Then, we investigate the contributions of individual components through ablation studies. Furthermore, we examine cross-dataset transfer, parameter sensitivity, and estimation behavior around temporary capacity recovery to assess the robustness of the proposed framework.
+
+\subsection{Datasets}
+To evaluate MHILLM, we consider three real-world battery datasets, namely NASA, CALCE, and Oxford. These datasets contain different cells, cycling procedures, and degradation trajectories, thereby providing complementary test conditions for SOH estimation. Their main characteristics are summarized in Table~\ref{tab:dataset_statistics}.
+
+\textbf{NASA.} The NASA battery-aging dataset contains repeated charging, discharging, and impedance measurements. We consider four 2 Ah cylindrical cells, B0005, B0006, B0007, and B0018. They undergo CC-CV charging to 4.2 V and CC discharging with cell-specific lower voltage limits 2.7V, 2.5V, 2.2V and 2.5V, respectively.
+
+\textbf{CALCE.} The CALCE dataset originates from the Center for Advanced Life Cycle Engineering at the University of Maryland. We consider four CS2 cells, CS2\_35, CS2\_36, CS2\_37, and CS2\_38, with a rated capacity of 1.1 Ah. They undergo CC-CV charging to 4.2 V and CC discharging  to 2.7V. The prismatic-cell measurements complement the cylindrical-cell data in NASA.
+
+\textbf{Oxford.}  The Oxford dataset contains long-term aging measurements from eight Kokam pouch cells, Cell1--Cell8. These cells have a nominal capacity of 0.74 Ah and undergo CC-CV charging to 4.2 V and a variance current discharging protocol with the Artemis-derived driving discharge profile down to 2.7V.
+
+
+
+%\begin{table}[t]
+%\centering
+%\caption{Characteristics of the selected battery datasets. Cell counts describe the selected/original cell pool, not the number of usable training samples. Blank entries are to be filled after preprocessing.}
+%%\label{tab:dataset_statistics}
+%\setlength{\tabcolsep}{1pt}
+%\begin{tabular}{lllll}
+%\hline
+%Dataset & Cell pool & Format & Rated capacity (Ah) & Cycle numbers \\
+%\hline
+%NASA & 4 & Cylindrical & 2.00 & Room-temperature cycling  \\
+%CALCE & 4 & Prismatic & 1.10 & CS2 cycling schedules  \\
+%Oxford & 8 & Pouch & 0.74 & 40~$^{\circ}$C; periodic characterization  \\
+%\hline
+%\end{tabular}
+%\end{table}
+
+\begin{table}
+\centering
+\caption{Characteristics of the selected battery datasets.}
+\label{tab:dataset_statistics}
+\setlength{\tabcolsep}{1pt}
+\begin{tabular}{cccc}
+\hline
+Dataset & NASA & CALCE & Oxford  \\
+\hline
+Cell pool  & 4 & 4 & 8   \\
+Format & Cylindrical  & Prismatic & Pouch   \\
+Nominal capacity (Ah)  & 2 & 1.1 & 0.74   \\
+Charge protocol    & CC-CV (0.75C, 4.2V)  & CC-CV (0.5C, 4.2V)  & CC (2C)\\
+Discharge protocol    & CC (1C)  & CC (1C) & variance\\
+Cut-off voltage (V) & 4.2/2.7  & 4.2/2.7/2.5/2.2/2.5   & 4.2/2.7 \\
+Cut-off current (A) & 0.02  & 0.05   & - \\
+\hline
+\end{tabular}
+\end{table}
+
+
+\subsection{Baselines}
+We compare MHILLM with the following representative baselines and all methods are adapted to the SOH task.
+
+\begin{itemize}
+\item \textbf{GPR} \cite{richardson2017gaussian}: Gaussian process regression models a nonlinear relationship between HI features and battery health. It provides a conventional probabilistic reference with a compact training procedure.
+\item \textbf{SVR}: Support vector regression with an RBF kernel provides a conventional nonlinear regression baseline. Its regularization and kernel parameters are selected on the validation partition.
+\item \textbf{GRU}: A gated recurrent network captures the evolution of multiple HIs across historical cycles and maps its final hidden state to the next SOH value.
+\item \textbf{TCN}: A temporal convolutional network uses dilated causal convolutions to capture multiscale dependencies without recurrent computation.
+\item \textbf{CNN-LSTM}: A convolutional frontend extracts local patterns from historical HI sequences, and an LSTM models their sequential evolution.
+\item \textbf{Transformer} \cite{vaswani2017attention}: A Transformer encoder learns dependencies among historical cycle representations and predicts SOH through a scalar regression head.
+\item \textbf{BMSFormer} \cite{li2024bmsformer}: This battery-specific model combines depthwise feature fusion and local-global fusion attention with a strongly correlated single HI. Its HI is selected exclusively from training data.
+\item \textbf{DLinear} \cite{zeng2023transformers}: This decomposition-based linear model provides a simple reference for learning smooth degradation trends. Its output head is adapted to a scalar SOH target.
+\item \textbf{GPT4TS} \cite{zhou2023one}: This method adapts a pretrained language-model backbone while keeping its original attention and feed-forward weights frozen. We adapt its downstream head for SOH regression, with numerical prompts computed from historical inputs.
+\end{itemize}
+
+
+\subsection{Experiment settings}
+\textbf{Evaluation metrics.} To evaluate the performance of MHILLM, we use Mean Absolute Error (MAE), Root Mean Squared Error (RMSE) and Mean Absolute Percentage Error(MAPE) as the primary metrics:
+\begin{gather}
+\operatorname{MAE}=\frac{1}{N}\sum_{n=1}^{N}|y_n-\hat y_n|,\\
+\operatorname{RMSE}=\sqrt{\frac{1}{N}\sum_{n=1}^{N}(y_n-\hat y_n)^2}, \\
+{\rm MAPE}(y, \hat{y}) = \frac{1}{N}\sum_{n=1}^{N}|\frac{y_i - \hat{y}_i}{y_i}|,
+\end{gather}
+where $y_n$ and $\hat y_n$ denote the reference and predicted SOH, respectively. In our experiments, we additionally use cell-disjoint evaluation. For NASA and CALCE, one cell is held out for testing, one remaining cell is reserved for validation, and the other two are used for training; test cells are rotated, and the validation assignment is fixed and documented for each fold. For Oxford, the same principle is applied to its eight-cell pool.  All folds retrain the preprocessing and alignment stages using training cells alone. Then, we adopt GPT-2 with hidden dimension $d=768$ as the backbone. The same backbone is applied to the trend and fluctuation branches. The initial configuration uses pooling kernels $\{3,5,9\}$, and LoRA rank $r=8$ with scaling $\alpha_l=16$. The proposed training setup uses AdamW, a batch size of 32, and learning-rate candidates $\{10^{-4},5\times10^{-4},10^{-3}\}$. The alignment and SOH stages are trained with early stopping after 10 epochs without validation improvement. Alignment checkpoints are selected by validation HI-prediction loss and downstream checkpoints are selected by validation MAE. The trainable tokenizer, cross-HI module, regression head, positional embeddings, normalization layers, and LoRA parameters are optimized, while the original attention and feed-forward projections remain frozen.
+We further conduct parameter-sensitivity experiments to examine the robustness of MHILLM with respect to its principal architectural
+hyperparameters. Specifically, the historical input length $L$ is varied over $\{8,12,16,24,32\}$, and the number of retained GPT-2 Transformer
+blocks $N_l$ is selected from $\{2,4,6,8,12\}$. The number of cross-HI attention heads $N_a$ is varied over $\{1,2,4,8,12\}$.  The optimal
+parameter selection is based exclusively on the mean validation MAE across the cell-disjoint folds.
+
+
+\subsection{Main Results}
+Table \ref{tab:main_results} summarizes the SOH estimation results. The best result in each column is marked in bold. MHILLM achieves the lowest error for every metric on all three datasets, showing that its advantage is maintained across distinct cell groups and sampling conventions.
+
+On NASA, MHILLM reduces MAE, RMSE, and MAPE by 9.52\%, 5.82\%, and 10.84\%, respectively, relative to the strongest competing result for each metric. The improvement is consistent across absolute and relative errors. On CALCE, the corresponding reductions are 4.03\%, 3.75\%, and 7.47\%. Although the margin is smaller on this dataset, MHILLM remains the only method that obtains the best value for all three measures. The largest gains occur on Oxford. Compared with the best baseline in each column, MHILLM lowers MAE by 15.91\%, RMSE by 12.90\%, and MAPE by 26.79\%. The improvement suggests that the learned representation remains effective when the sampling interval and degradation profile differ from those of NASA and CALCE. The conventional regressors produce comparatively large errors on NASA and CALCE. GPR and SVR map the engineered inputs to SOH but do not explicitly describe how multiple indicators evolve across a historical window. GRU, TCN, and CNN--LSTM exploit temporal structure and generally improve upon these regressors; nevertheless, their representations are learned solely from the available battery-training folds and provide limited mechanisms for separating persistent degradation from short-lived capacity recovery.
+Transformer-based and decomposition-based baselines are more competitive. The standard Transformer benefits from global dependency modeling, BMSFormer combines local and global information, and DLinear provides a strong result on CALCE through a simple decomposition prior. GPT4TS attains the strongest baseline RMSE and MAPE on NASA, demonstrating the value of adapting a pretrained sequence model. Its weaker Oxford performance, however, indicates that direct LLM adaptation alone does not guarantee robust multi-indicator modeling under a different record structure. In our proposed MHILLM, first, cycle-wise decomposition separates gradual capacity fading from transient fluctuations, reducing interference from capacity regeneration. Second, cross-HI attention models the dependence among heterogeneous indicators rather than treating their concatenation as a fixed representation. Third, autoregressive HI alignment and LoRA adaptation orient the pretrained backbone toward degradation dynamics before SOH regression. The consistent improvement of all three datasets supports the joint use of these designs for unseen-cell estimation.
+
+
+\begin{table*}[t]
+\centering
+\caption{Evaluation on three datasets.}
+\label{tab:main_results}
+\setlength{\tabcolsep}{0.1pt}
+\renewcommand{\arraystretch}{1.18}
+
+\begin{tabular}{c|ccc|ccc|ccc}
+\hline
+\multirow{2}{*}{\textbf{Method}}
+& \multicolumn{3}{c|}{\textbf{NASA}}
+& \multicolumn{3}{c|}{\textbf{CALCE}}
+& \multicolumn{3}{c}{\textbf{Oxford}} \\
+
+& {MAE} & {RMSE} & {MAPE}
+& {MAE} & {RMSE} & {MAPE}
+& {MAE} & {RMSE} & {MAPE} \\
+\hline
+
+GPR
+& 0.0416 & 0.0478 & 0.0554
+& 0.0173 & 0.0314 & 0.0342
+& 0.0073 & 0.0128 & 0.0095 \\
+
+SVR
+& 0.0420 & 0.0509 & 0.0562
+& 0.0224 & 0.0421 & 0.0464
+& 0.0069 & 0.0123 & 0.0089 \\
+
+GRU
+& 0.0342 & 0.0407 & 0.0446
+& 0.0169 & 0.0284 & 0.0320
+& 0.0064 & 0.0115 & 0.0082 \\
+
+TCN
+& 0.0371 & 0.0468 & 0.0554
+& 0.0155 & 0.0268 & 0.0316
+& 0.0052 & 0.0106 & 0.0067 \\
+
+CNN--LSTM
+& 0.0291 & 0.0355 & 0.0398
+& 0.0157 & 0.0278 & 0.0314
+& 0.0053 & 0.0103 & 0.0069 \\
+
+Transformer
+& 0.0269 & 0.0321 & 0.0356
+& 0.0131 & 0.0257 & 0.0302
+& 0.0044 & 0.0093 & 0.0056 \\
+
+BMSFormer
+& 0.0252 & 0.0312 & 0.0338
+& 0.0129 & 0.0250 & 0.0279
+& 0.0047 & 0.0097 & 0.0061 \\
+
+DLinear
+& 0.0263 & 0.0319 & 0.0354
+& 0.0124 & 0.0240 & 0.0241
+& 0.0048 & 0.0100 & 0.0063 \\
+
+GPT4TS
+& 0.0254 & 0.0292 & 0.0332
+& 0.0128 & 0.0253 & 0.0279
+& 0.0058 & 0.0112 & 0.0077\\
+\hline
+
+\textbf{MHILLM}
+& \textbf{0.0228} & \textbf{0.0275} & \textbf{0.0296}
+& \textbf{0.0119} & \textbf{0.0231} & \textbf{0.0223}
+& \textbf{0.0037} & \textbf{0.0081} & \textbf{0.0041} \\
+\hline
+\end{tabular}
+\end{table*}
+
+
+\subsection{Ablation Studies}
+
+We design component ablations to isolate the contribution of the main architectural and training choices. Every variant uses the same cell-disjoint folds, preprocessing procedure, training budget, and model-selection rule as the full model.
+
+$\bullet$ \textbf{w/o Decomposition}: The original normalized HI sequence is supplied to a single branch without separating the smooth trend and fluctuation components.
+
+$\bullet$ \textbf{w/o Cross-HI Attention}: Cross-HI attention is replaced by a shared linear projection followed by direct HI aggregation.
+
+$\bullet$ \textbf{w/o Context Token}: The degradation-context token constructed from the instance statistics is removed.
+
+$\bullet$ \textbf{w/o AR Alignment}: The autoregressive next-HI alignment stage is skipped, and the SOH estimator is trained directly from the pretrained initialization.
+
+$\bullet$ \textbf{w/o LoRA}: The LoRA matrices are removed while the remaining trainable modules and partial-freezing policy are retained.
+
+
+\begin{table*}[t]
+\centering
+\caption{Component ablation of MHILLM.}
+\label{tab:component_ablation}
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|ccc}
+\hline
+\textbf{Dataset} & \textbf{Variant} & \textbf{MAE} & \textbf{RMSE} & \textbf{MAPE} \\
+\hline
+\multirow{8}{*}{NASA}
+& w/o Decomposition      & 0.0251 & 0.0283 & 0.0325 \\
+& w/o Cross-HI Attention & 0.0278 & 0.0324 & 0.0367 \\
+& w/o Context Token      & 0.0371 & 0.0448 & 0.0452 \\
+& w/o AR Alignment       & 0.0262 & 0.0302 & 0.0336 \\
+& w/o LoRA               & 0.0260 & 0.0299 & 0.0334 \\
+& \textbf{MHILLM} & \textbf{0.0228} & \textbf{0.0275} & \textbf{0.0296} \\
+\hline
+\multirow{8}{*}{CALCE}
+& w/o Decomposition      & 0.0135 & 0.0245 & 0.0260 \\
+& w/o Cross-HI Attention & 0.0122 & 0.0241 & 0.0254 \\
+& w/o Context Token      & 0.0145 & 0.0269 & 0.0311 \\
+& w/o AR Alignment       & 0.0125 & 0.0251 & 0.0249 \\
+& w/o LoRA               & 0.0130 & 0.0247 & 0.0241 \\
+& MHILLM                  & \textbf{0.0119} & \textbf{0.0231} & \textbf{0.0223} \\
+\hline
+\multirow{8}{*}{Oxford}
+& w/o Decomposition      & 0.0051 & 0.0106 & 0.0069 \\
+& w/o Cross-HI Attention & 0.0046 & 0.0096 & 0.0053 \\
+& w/o Context Token      & 0.0059 & 0.0111 & 0.0074 \\
+& w/o AR Alignment       & 0.0038 & 0.0085 & 0.0043 \\
+& w/o LoRA               & 0.0042 & 0.0097 & 0.0050 \\
+& MHILLM                  & \textbf{0.0037} & \textbf{0.0081} & \textbf{0.0041} \\
+\hline
+\end{tabular}
+\end{table*}
+
+
+Table \ref{tab:component_ablation} provides a controlled assessment of MHILLM from three complementary perspectives: degradation representation, multi-HI interaction, and pretrained-model adaptation, where it can be seen that key components all contribute to the improvement of MHILLM.
+For degradation representation, w/o Decomposition feeds the original HI sequence directly into a single branch, and therefore tests the necessity of explicitly separating slow capacity fading from short-lived recovery and measurement fluctuations.  
+The trend branch describes the persistent degradation direction, while the fluctuation branch retains local regeneration and irregular aging behavior that may be suppressed by smoothing. 
+For multi-HI interaction, w/o Cross-HI Attention replaces adaptive indicator interaction with direct aggregation, thereby measuring whether pairwise dependencies among heterogeneous HIs provide information beyond their individual values. 
+The w/o Context Token variant further isolates the HI-level context compared with the full model,  which may be weakened by instance normalization. 
+For pretrained-model adaptation, w/o AR Alignment bypasses next-record HI prediction and trains the network directly using SOH labels, allowing us to confirm the self-supervised degradation alignment supplies a useful initialization when labeled cell data are limited. 
+The w/o LoRA variant retains the frozen GPT-2 attention and feed-forward projections while optimizing the remaining trainable modules, and thus quantifies the benefit of low-rank updates to the attention directions. 
+
+
+
+\textbf{Backbone ablation.} To examine whether the observed gains depend on one particular pretrained architecture, we replace GPT-2 with GPT \footnote{ \url{https://huggingface.co/openai-community/openai-gpt}}, BERT \footnote{ \url{ https://huggingface.co/google-bert/bert-base-uncased}}, and T5 \footnote{ \url{https://huggingface.co/google-t5/t5-base}} while retaining the battery tokenizer, decomposition, cross-HI interaction, and regression head.  These backbones differ in attention direction, parameter count, and pretraining objective, which may influence how the model represents long-term fading, local capacity recovery, and dependencies among distant cycles. 
+
+$\bullet$ GPT and GPT-2 employ causal decoder-only attention and therefore follow the chronological direction of degradation naturally. 
+
+$\bullet$ BERT uses a bidirectional encoder, allowing every historical token within the observed window to interact with the others.
+
+$\bullet$ T5 adopts an encoder-decoder formulation and introduces a different denoising pretraining objective. 
+
+
+
+Table \ref{tab:backbone_ablation} permits a direct assessment of the accuracy-efficiency trade-off. The comparison between GPT and GPT-2 shows that the stronger causal pretraining and representation capability of GPT-2 lead to more accurate degradation modeling. The BERT variant performs less effectively than GPT-2, indicating that unrestricted interaction among observed historical records does not provide additional benefits for SOH estimation. Similarly, the T5 variant does not surpass GPT-2, showing that the encoder-decoder architecture does not offer superior modeling for the numerical degradation sequence.
+The results further show that predictive accuracy is not determined by parameter scale alone. GPT-2 achieves the best accuracy without relying solely on increased model size. Its combination of causal sequence modeling, effective representation learning, and computational efficiency makes it a more suitable backbone for our proposed framework.
+
+
+
+\begin{table*}[t]
+\centering
+\caption{Ablation study of pretrained backbone models.}
+\label{tab:backbone_ablation}
+\setlength{\tabcolsep}{2pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c|c|cc}
+\hline
+\textbf{Dataset} & \textbf{Backbone} & \textbf{Params. (M)}
+& \textbf{Time/epoch (s)} & \textbf{MAE} & \textbf{RMSE} \\
+\hline
+\multirow{4}{*}{NASA}
+& GPT          & 120 & 3.27 & 0.0239 & 0.0279 \\
+& BERT         & 110 & 2.99 & 0.0236 & 0.0282 \\
+& T5           & 223 & 3.69 & 0.0253 & 0.0291 \\
+& GPT-2 (ours) & 137 & 3.36 & \textbf{0.0228} & \textbf{0.0275} \\
+\hline
+\multirow{4}{*}{CALCE}
+& GPT          & 120 & 10.04 & 0.0134 & 0.0246 \\
+& BERT         & 110 & 8.88 & 0.0128 & 0.0236 \\
+& T5           & 223 & 15.80 & 0.0142 & 0.0258 \\
+& GPT-2 (ours) & 137 & 12.49 & \textbf{0.0119} & \textbf{0.0231} \\
+\hline
+\multirow{4}{*}{Oxford}
+& GPT          & 120 & 4.11 & 0.0039 & \textbf{0.0078} \\
+& BERT         & 110 & 3.51 & 0.0042 & 0.0089 \\
+& T5           & 223 & 5.29 & 0.0051 & 0.0095 \\
+& GPT-2 (ours) & 137 & 4.34 & \textbf{0.0037} & 0.0081 \\
+\hline
+\end{tabular}
+\end{table*}
+
+\subsection{Parameter Sensitivity}
+
+We further study several hyperparameters closely related to the proposed design, including historical input length $L$, retained GPT-2 depth $N_l$ and number of cross-HI attention heads $N_a$. For each study, one factor is varied while the remaining settings are fixed at their default values. Hyperparameter values are listed in Table \ref{tab:parameter_search} and their results are presented in Figure 3.
+
+\begin{table}[t]
+\centering
+\caption{Hyperparameters in the parameter-sensitivity study.}
+\label{tab:parameter_search}
+\setlength{\tabcolsep}{18pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{c|c|c}
+\hline
+\textbf{Parameter} & \textbf{Candidates} & \textbf{Default} \\
+\hline
+Historical length $L$ & $\{4,8,16,24,32\}$ & $16$ \\
+GPT-2 blocks $N_l$ & $\{2,4,6,8,12\}$ & $6$ \\
+Attention heads $N_a$ & $\{1,2,4,8\}$ & $4$ \\
+\hline
+\end{tabular}
+\end{table}
+
+
+
+$\bullet$ 
+The historical input length $L$ directly determines the amount of degradation history available to the model. A short historical window provides limited information about the degradation trajectory, whereas an excessively long window introduces redundant historical patterns and reduces the number of valid training windows. The results show that $L=16$ provides the most effective balance between historical degradation information and available training samples.
+
+$\bullet$ 
+The GPT-2 block depth $N_l$ determines the representation capacity of the pretrained backbone for modeling battery degradation sequences. Increasing the number of retained blocks initially improves the extraction of high-level temporal representations, while excessive depth introduces redundant parameters and unnecessary computational overhead for the battery data. The results demonstrate that $N_l=6$ achieves the best overall prediction performance in most cases, providing sufficient representation capacity without excessive model complexity.
+
+
+$\bullet$ 
+The number of cross-HI attention heads $N_a$ controls the granularity of interactions among different health indicators. A small number of heads limits the diversity of cross-indicator relationships that can be captured, whereas excessively increasing the number of heads does not provide further predictive benefits and may introduce redundant interaction patterns. The experimental results show that $N_a=4$ achieves the more effective cross-HI representation and yields the best overall prediction performance in most cases.
+
+
+
+
+
+\begin{figure}[!t]%figure*是单栏的图片排版，用于大图片，双栏中放不下的
+	\centering
+	\scalebox{1.08}[1.08]{\includegraphics[width=5in]{Parameters-Sensitivity_00.jpg}}
+	\caption{Parameter sensitivity of GLALLM.
+}	
+	\label{para_sen}	
+\end{figure}
+
+\subsection{Visualization}
+
+To provide an intuitive comparison of the SOH estimation performance, we visualize the prediction curves of CNN-LSTM, Transformer, GPT4TS, and the proposed MHILLM on the NASA, CALCE, and Oxford datasets. For each cell, a historical window is shifted forward by one record at each prediction step, producing a continuous SOH trajectory. The predicted values are compared with the corresponding ground-truth SOH values in Figs.~\ref{fig:nasa_prediction}--\ref{fig:oxford_prediction}. We can observe that all models capture the overall capacity-degradation tendency, but the baseline predictions exhibit visible deviations around local fluctuations and recovery points. CNN-LSTM produces a relatively smooth trajectory and consequently misses several short-term variations. Transformer and GPT4TS provide improved trend tracking, although prediction offsets remain in some degradation intervals. In comparison, MHILLM maintains a more stable prediction trajectory and responds more accurately to these local variations. This result indicates that jointly modeling the trend and fluctuation components helps preserve both global degradation information and short-term dynamics.
+
+
+
+
+
+
+
+\begin{figure}[!t]  
+\makebox[\textwidth][c]{\includegraphics[width=1.4\textwidth]{compared_result1_00.jpg}}  
+\caption{The prediction results of Autoformer, MTGNN, PatchTST, GPT4TS and our GLALLM against the ground truth on the DSWE1 dataset, across horizons of 1 and 12.}  
+\label{fig5}
+\end{figure}
+
+\begin{figure}[!t]  
+\makebox[\textwidth][c]{\includegraphics[width=1.4\textwidth]{compared_result2_00.jpg}}  
+\caption{The prediction results of Autoformer, MTGNN, PatchTST, GPT4TS and our GLALLM against the ground truth on the DSWE2 dataset, across horizons of 1 and 12.}  
+\label{fig6}
+\end{figure}
+
+\begin{figure}[!t]  
+\makebox[\textwidth][c]{\includegraphics[width=1.4\textwidth]{compared_result3_00.jpg}}  
+\caption{The prediction results of Autoformer, MTGNN, PatchTST, GPT4TS and our GLALLM against the ground truth on the NREL dataset, across horizons of 1 and 12.}  
+\label{fig7}
+\end{figure}
+
+\begin{figure}[!t]  
+\makebox[\textwidth][c]{\includegraphics[width=1.4\textwidth]{compared_result4_00.jpg}}  
+\caption{The prediction results of Autoformer, MTGNN, PatchTST, GPT4TS and our GLALLM against the ground truth on the SDWPF dataset, across horizons of 1 and 12.}  
+\label{fig8}
+\end{figure}
+
+
+
+
+
+\section{Conclusions}
+In this paper, we introduce \textbf{GLALLM}, a novel framework designed to adapt LLMs in spatio-temporal wind speed forecasting via global-local aware modeling. Our approach effectively addresses the inherent limitations of LLMs in short-term spatial modeling by integrating the LLM-based global branch with a local branch that utilizes STHGNN to capture local spatial dependencies. The global branch processes global temporal patterns from long-range historical wind series, while the local branch captures high-order local interactions among turbines through a hypergraph architecture, providing a comprehensive depiction of spatial dependencies that extends beyond pairwise interactions. This dual-branch architecture ensures that both long-term temporal trends and short-term spatial dynamics are modeled. Another key innovation of GLALLM is the spatio-temporal aware fusion module, which synergizes the complementary strengths of the global and local branches. By incorporating meta networks, the fusion module generates time-varying and turbine-specific model parameters, allowing for dynamic adaptation based on input data. This customization enables the model to capture the specific spatio-temporal characteristics of wind patterns, further enhancing forecasting accuracy. Extensive experiments on four real-world wind datasets demonstrate that GLALLM achieves a significant advancement in spatio-temporal wind speed forecasting.
+
+
+
+\section*{Data availability}
+Public datasets are used. The sources of these datasets are provided.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\bibliography{reference}
+\bibliographystyle{elsarticle-num-names}
+\end{document}
+\endinput
+%%
+%% End of file `elsarticle-template-num.tex'.
