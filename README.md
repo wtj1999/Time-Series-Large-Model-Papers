@@ -34,7 +34,7 @@
 
 - 2025
     - LLM-based Model
-        - [DualSG: A Dual-Stream Explicit Semantic-Guided Multivariate Time Series Forecasting Framework](https://arxiv.org/abs/2507.21830) — **ACM MM 2025**；以双流架构结合数值预测和显式语义引导。[代码](https://github.com/BenchCouncil/DualSG)
+        - [DualSG: A Dual-Stream Explicit Semantic-Guided Multivariate Time Series Forecasting Framework](https://arxiv.org/abs/2507.21830) — **ACM MM 2025**；以双流架构结合数值预测和显式语义引导。[代码](https://github.com/BenchCouncil/DualSG)[中文解读](https://zhuanlan.zhihu.com/p/1954949007026676229)
         - [TableTime: Reformulating Time Series Classification as Training-Free Table Understanding with Large Language Models](https://arxiv.org/abs/2411.15737) — **CIKM 2025**；将多变量时序转为文本表格，结合上下文与推理提示实现免训练分类。[代码](https://github.com/realwangjiahao/TableTime)
         - [Unleashing The Power of Pre-Trained Language Models for Irregularly Sampled Time Series](https://arxiv.org/abs/2408.08328) — **KDD 2025**；提出 ISTS-PLM，通过时间感知与变量感知语言模型统一处理不规则采样时序任务。[代码](https://github.com/usail-hkust/ISTS-PLM)
         - [STELLA: Guiding Large Language Models for Time Series Forecasting with Semantic Abstractions](https://arxiv.org/abs/2512.04871v1) — **arXiv 2025（预印本）**；将趋势、季节性与残差转为分层语义锚点，为 LLM 预测提供全局与样本级上下文。
@@ -77,7 +77,7 @@
         - [Chronos: Learning the Language of Time Series](https://arxiv.org/abs/2403.07815) — **TMLR 2024**；将缩放和量化后的数值转为离散 token，用语言模型式预训练实现概率预测。[代码](https://github.com/amazon-science/chronos-forecasting)
 
     - Benchmark
-        - [FoundTS: Comprehensive and Unified Benchmarking of Foundation Models for Time Series Forecasting](https://arxiv.org/abs/2410.11802) — **arXiv 2024（预印本）**；统一比较零样本、少样本与全样本预测设置。
+        - [FoundTS: Comprehensive and Unified Benchmarking of Foundation Models for Time Series Forecasting](https://arxiv.org/abs/2410.11802) — **arXiv 2024（预印本）**；统一比较零样本、少样本与全样本预测设置。[中文解读](https://www.xinfinite.net/t/topic/7659)
 
 - 2023
     - LLM-based Model
@@ -90,15 +90,6 @@
         - [UniTime: A Language-Empowered Unified Model for Cross-Domain Time Series Forecasting](https://arxiv.org/abs/2310.09751) — **WWW 2024**；结合领域语言指令、Language-TS Transformer 与掩码训练，统一跨领域时序预测。[代码](https://github.com/liuxu77/UniTime)
     - Foundation Model
         - [Lag-Llama: Towards Foundation Models for Probabilistic Time Series Forecasting](https://arxiv.org/abs/2310.08278) — **arXiv 2023（预印本）**；以滞后值为协变量预训练解码器 Transformer，进行单变量零样本概率预测。[代码](https://github.com/time-series-foundation-models/lag-llama)
-
-## 中文阅读线索与检索入口
-
-关注公众号：**时序人、时序之心**。本次仅使用可公开检索的解读或转载线索，并回到论文原文核验；未完整抓取公众号历史文章。
-
-- **时序人**：[FoundTS：首个覆盖多场景的时序预测基础模型评测基准（公开转载，正文注明来源：时序人）](https://www.xinfinite.net/t/topic/7659)；对应论文：[FoundTS](https://arxiv.org/abs/2410.11802)。
-- **时序之心**：[ACM MM 2025：DualSG 双流语义引导预测框架（公开解读）](https://zhuanlan.zhihu.com/p/1954949007026676229)；对应论文：[DualSG](https://arxiv.org/abs/2507.21830)；[作者仓库中的中文解读入口](https://github.com/BenchCouncil/DualSG)。
-
-后续检索可从 [ICLR 2026 官方目录](https://iclr.cc/Downloads/2026)、[ICML 2026 官方目录](https://icml.cc/Downloads/2026)、[NeurIPS 2026 官方目录](https://neurips.cc/Downloads/2026) 和 [arXiv 时序检索](https://arxiv.org/search/?query=time+series&searchtype=all&abstracts=show&order=-announced_date_first&size=50) 开始。公众号解读用于发现论文；标题、方法与会议归属以论文及会议原始页面为准。
 
 ## 仓库内技术路线
 
