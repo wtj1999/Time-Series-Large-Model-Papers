@@ -1,11 +1,5 @@
 # Time Series Papers: Foundation Models, LLMs and Beyond
 
-时序论文阅读清单，以 **时序基础模型、LLM 与多模态时序建模** 为重点，同时关注预测、分类、异常检测、插补和评测方法。
-
-**最近更新：2026-11-12** · 本次新增 **28 篇**（2026 年 24 篇、2025 年 3 篇、2024 年 1 篇）。
-
-收录说明：会议与期刊信息根据论文、正式论文集或作者页面核验，链接中的会议年份用于归档；未确认正式发表信息的 arXiv 条目标注为预印本，不据此推断录用状态。2023–2025 年条目保留原有年份分组，条目中单独标注核实后的发表信息，可能与分组年份不同。代码链接仅列出已确认的作者仓库。本清单为精选补充，不代表完整会议目录。
-
 - 2026
     - LLM-based Model
         - [TimeOmni-1: Incentivizing Complex Reasoning with Time Series in Large Language Models](https://iclr.cc/virtual/2026/poster/10007794) — **ICLR 2026**；提出时序推理任务套件，覆盖感知、外推与决策能力。[代码](https://github.com/AntonGuan/TimeOmni-1)
